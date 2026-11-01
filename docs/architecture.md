@@ -145,15 +145,20 @@ the sheen by `elasticity * 0.1` in UV space.
 6. **Deck snap behavior.** `CardDeck` delegates snapping to Pager, whose fling curve is not
    Embla's. The per-page transform is exact; the snap duration is reported as a difference.
 
-## Packaging plan (not done yet)
+## 0.1.0 packaging
 
-Preferred once the samples are accepted:
-
-- Dev/local: Gradle included build or `mavenLocal()`.
-- Distribution: GitHub Packages (or JitPack) as `com.mainecare.effects:motion:0.1.0`,
-  `:glass:0.1.0`, `:deck:0.1.0`, with the NOTICE and licenses inside each AAR.
-- App integration: an adapter in MaineCare that supplies the current background bitmap and
-  maps theme tokens to `GlassMaterial` presets. No app code depends on the shader internals.
+- Maven Local artifacts: `com.mainecare.effects:motion:0.1.0`, `:glass:0.1.0`, `:deck:0.1.0`,
+  published by `./gradlew publishToMavenLocal`. Each version directory has the AAR, POM,
+  Gradle module metadata, sources jar, and license/notice classifier artifacts. The sources
+  jar carries `META-INF/LICENSE`, `META-INF/NOTICE` and `META-INF/THIRD_PARTY_NOTICES.md`.
+- `glass` and `deck` expose Compose as `api` with the 2026.03.00 BOM; the POM imports the BOM
+  and the Gradle metadata carries the platform constraint.
+- A separate Android consumer build against Maven Local compiles `MaineGlassCard`,
+  `GlassBackdrop` and `CardDeck`. The MaineCare App is not modified.
+- GitHub Packages/JitPack remain follow-ups; no credentials are stored.
+- App integration goes through `MaineGlassCard` only; `GlassSurface` stays a demo/gate seam.
+  See `docs/release-0.1.0.md` for the adapter API, performance tiers, known ceiling and
+  license carriage.
 
 ## Verification assets
 
