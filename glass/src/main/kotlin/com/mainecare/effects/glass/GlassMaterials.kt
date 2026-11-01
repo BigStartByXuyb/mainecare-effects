@@ -1,0 +1,139 @@
+package com.mainecare.effects.glass
+
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+
+/**
+ * Values transcribed from MaineCare feeding v21 (feeding-v21-obsidian.css) and the
+ * shared feeding shell (feeding-v6-shell.css). Colors are CSS rgba() converted to
+ * Android ARGB; blur radii are CSS px, which equal dp at the 390dp reference viewport.
+ */
+object MaineGlassMaterials {
+    val Card = GlassMaterial(
+        name = "feature-card",
+        tint = Color(0x8F0A0C0F),
+        blurRadiusDp = 34f,
+        saturation = 1.32f,
+        brightness = 0.82f,
+        borderColor = Color(0x29EBEFF4),
+        topHighlightColor = Color(0x3DFFFFFF),
+        bottomInnerShadowColor = Color(0x5C000000),
+        innerShadowDepthDp = 34f,
+        shadowElevation = 24.dp,
+        sheenStrength = 1f,
+        liquid = LiquidGlassParams(displacementScale = 22f, aberrationIntensity = 2.2f, elasticity = 0.18f),
+    )
+
+    val Advice = GlassMaterial(
+        name = "advice",
+        tint = Color(0xA8080A0D),
+        blurRadiusDp = 32f,
+        saturation = 1.34f,
+        brightness = 0.80f,
+        borderColor = Color(0x2EEDF1F5),
+        topHighlightColor = Color(0x4AFFFFFF),
+        bottomInnerShadowColor = Color(0x6B000000),
+        innerShadowDepthDp = 30f,
+        shadowElevation = 22.dp,
+        sheenStrength = 1.1f,
+        liquid = LiquidGlassParams(displacementScale = 22f, aberrationIntensity = 2.2f, elasticity = 0.18f),
+        goldTopEdge = true,
+        sheenTopRight = Color(0x29F4F8FB),
+        sheenTopCenter = Offset(1.0f, 0.0f),
+        sheenTopRadii = Offset(0.85f, 1.40f),
+        sheenTopFade = 0.34f,
+        sheenBottom = Color(0x0EC5D0DA),
+        sheenDiagonal = Color(0x1AFFFFFF),
+        sheenDark = Color(0x00000000),
+        sheenVerticalTop = Color(0x851C1F23),
+        sheenVerticalBottom = Color(0xD1040507),
+    )
+
+    val MealFront = GlassMaterial(
+        name = "meal-front",
+        tint = Color(0x850A0C0F),
+        blurRadiusDp = 22f,
+        saturation = 1.32f,
+        brightness = 0.84f,
+        borderColor = Color(0x21EBEFF4),
+        topHighlightColor = Color(0x33FFFFFF),
+        bottomInnerShadowColor = Color(0x4D000000),
+        innerShadowDepthDp = 20f,
+        shadowElevation = 10.dp,
+        sheenStrength = 0.85f,
+        liquid = LiquidGlassParams(displacementScale = 18f, aberrationIntensity = 2.0f, elasticity = 0.18f, cornerRadius = 16.dp),
+        sheenTopRight = Color(0x1CF5F8FB),
+        sheenTopCenter = Offset(0.85f, 0.04f),
+        sheenTopRadii = Offset(0.844f, 1.806f),
+        sheenTopFade = 0.68f,
+        sheenBottom = Color(0x0DCDD7E0),
+        sheenDiagonal = Color(0x0EFFFFFF),
+        sheenDark = Color(0x00000000),
+        sheenVerticalTop = Color(0x08FFFFFF),
+        sheenVerticalBottom = Color(0x14000000),
+    )
+
+    val Insight = GlassMaterial(
+        name = "insight-card",
+        tint = Color(0xC2080A0D),
+        blurRadiusDp = 26f,
+        saturation = 1.32f,
+        brightness = 0.84f,
+        borderColor = Color(0x29EBEFF4),
+        topHighlightColor = Color(0x38FFFFFF),
+        bottomInnerShadowColor = Color(0x57000000),
+        innerShadowDepthDp = 28f,
+        shadowElevation = 13.dp,
+        sheenStrength = 0.95f,
+        liquid = LiquidGlassParams(displacementScale = 20f, aberrationIntensity = 2.1f, elasticity = 0.18f, cornerRadius = 20.dp),
+        sheenTopRight = Color(0x1AF5F8FB),
+        sheenTopCenter = Offset(0.88f, 0.0f),
+        sheenTopRadii = Offset(0.56f, 1.40f),
+        sheenTopFade = 0.68f,
+        sheenBottom = Color(0x0FCDD7E0),
+        sheenDiagonal = Color(0x0FFFFFFF),
+        sheenDark = Color(0x4D000000),
+        sheenVerticalTop = Color(0x3D22262B),
+        sheenVerticalBottom = Color(0x8A030406),
+    )
+
+    val Dock = GlassMaterial(
+        name = "dock",
+        tint = Color(0x660D0F12),
+        blurRadiusDp = 24f,
+        saturation = 1.38f,
+        brightness = 0.88f,
+        borderColor = Color(0x24EBEFF4),
+        topHighlightColor = Color(0x40FFFFFF),
+        bottomInnerShadowColor = Color(0x57000000),
+        innerShadowDepthDp = 28f,
+        shadowElevation = 18.dp,
+        sheenStrength = 0.9f,
+        liquid = LiquidGlassParams(displacementScale = 20f, aberrationIntensity = 2.2f, elasticity = 0.18f, cornerRadius = 28.dp),
+        sheenTopRight = Color(0x1CF5F8FB),
+        sheenTopCenter = Offset(1.0f, 0.0f),
+        sheenTopRadii = Offset(0.85f, 1.40f),
+        sheenTopFade = 0.34f,
+        sheenBottom = Color(0x00000000),
+        sheenDiagonal = Color(0x13FFFFFF),
+        sheenDark = Color(0x00000000),
+        sheenVerticalTop = Color(0x12FFFFFF),
+        sheenVerticalBottom = Color(0x0E000000),
+    )
+
+    val SoftControl = GlassMaterial(
+        name = "icon-button",
+        tint = Color(0x0AFFFFFF),
+        blurRadiusDp = 24f,
+        saturation = 1.38f,
+        brightness = 0.88f,
+        borderColor = Color(0x1FEBEFF4),
+        topHighlightColor = Color(0x33FFFFFF),
+        bottomInnerShadowColor = Color(0x3D000000),
+        innerShadowDepthDp = 18f,
+        shadowElevation = 0.dp,
+        sheenStrength = 0.7f,
+        liquid = LiquidGlassParams(displacementScale = 16f, aberrationIntensity = 1.8f, elasticity = 0.18f, cornerRadius = 22.dp),
+    )
+}

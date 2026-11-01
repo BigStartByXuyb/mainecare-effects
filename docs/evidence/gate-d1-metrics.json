@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/android-gate-d1-crop.png",
+  "right": "verification/web-reference/gate-web-d1.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 3.053264080832581,
+  "rmse": 7.3271060782463255,
+  "psnr": 30.83215402694077,
+  "ssim": 0.9754020043150023,
+  "maxChannelDiff": 116,
+  "percentOver2": 27.625172749323106,
+  "percentOver5": 15.652807352775271,
+  "percentOver10": 9.068722501128159,
+  "percentOver20": 5.097030474390794
+}
