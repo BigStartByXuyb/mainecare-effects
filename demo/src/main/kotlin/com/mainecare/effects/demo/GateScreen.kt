@@ -34,11 +34,14 @@ fun GateScreen(
     beforeEnabled: Boolean = true,
     sheenEnabled: Boolean = true,
     borderEnabled: Boolean = true,
+    blurEnabled: Boolean = true,
     beforeStrength: Float? = null,
     backgroundAsset: String = "backdrop-gate.png",
+    sceneAsset: String? = null,
     blurSigmaScale: Float = 1.4f,
 ) {
     val backdrop = rememberBackdropAsset(backgroundAsset) ?: return
+    val scene = sceneAsset?.let { rememberBackdropAsset(it) }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -53,6 +56,7 @@ fun GateScreen(
             GlassBackdrop(
                 image = backdrop,
                 modifier = Modifier.fillMaxSize(),
+                sceneImage = scene,
                 blurSigmaScale = blurSigmaScale,
             ) {
                 Box(Modifier.fillMaxSize()) {
@@ -61,6 +65,7 @@ fun GateScreen(
                         beforeLayer = beforeEnabled && MaineGlassMaterials.Card.beforeLayer,
                         beforeStrength = beforeStrength ?: MaineGlassMaterials.Card.beforeStrength,
                         sheenStrength = if (sheenEnabled) MaineGlassMaterials.Card.sheenStrength else 0f,
+                        blurRadiusDp = if (blurEnabled) MaineGlassMaterials.Card.blurRadiusDp else 0f,
                         borderColor = if (borderEnabled) MaineGlassMaterials.Card.borderColor else Color.Transparent,
                         topHighlightColor = if (borderEnabled) {
                             MaineGlassMaterials.Card.topHighlightColor
@@ -104,6 +109,7 @@ fun GateScreen(
                     val dock = MaineGlassMaterials.Dock.copy(
                         shadowAlpha = if (shadowEnabled) MaineGlassMaterials.Dock.shadowAlpha else 0f,
                         sheenStrength = if (sheenEnabled) MaineGlassMaterials.Dock.sheenStrength else 0f,
+                        blurRadiusDp = if (blurEnabled) MaineGlassMaterials.Dock.blurRadiusDp else 0f,
                         borderColor = if (borderEnabled) MaineGlassMaterials.Dock.borderColor else Color.Transparent,
                         topHighlightColor = if (borderEnabled) {
                             MaineGlassMaterials.Dock.topHighlightColor

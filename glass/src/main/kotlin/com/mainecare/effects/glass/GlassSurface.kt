@@ -87,8 +87,9 @@ fun GlassSurface(
     val backdropShader = remember(backdropBitmap) {
         backdropBitmap?.let { BitmapShader(it, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP) }
     }
-    val sceneShader = remember(backdrop?.image) {
-        backdrop?.image?.let {
+    val sceneImage = backdrop?.sceneImage ?: backdrop?.image
+    val sceneShader = remember(sceneImage) {
+        sceneImage?.let {
             BitmapShader(it.asAndroidBitmap(), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         }
     }
@@ -231,12 +232,13 @@ private fun bindShader(
         (surfaceBounds.top + inset - bounds.top) * factorY,
     )
     shader.setFloatUniform("uBackdropScale", factorX, factorY)
+    val scene = backdrop.sceneImage ?: backdrop.image
     val fit = backdrop.contentScale.computeScaleFactor(
-        Size(backdrop.image.width.toFloat(), backdrop.image.height.toFloat()),
+        Size(scene.width.toFloat(), scene.height.toFloat()),
         Size(bounds.width, bounds.height),
     )
-    val drawnWidth = backdrop.image.width * fit.scaleX
-    val drawnHeight = backdrop.image.height * fit.scaleY
+    val drawnWidth = scene.width * fit.scaleX
+    val drawnHeight = scene.height * fit.scaleY
     shader.setFloatUniform(
         "uSceneOrigin",
         (surfaceBounds.left + inset - bounds.left - (bounds.width - drawnWidth) / 2f) / fit.scaleX,

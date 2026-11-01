@@ -93,6 +93,17 @@
     background: transparent;
   }
   body.warp-only .tint, body.warp-only .card::before { display: none; }
+  body.shadow-stage .card {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: 0 24px 52px rgba(0, 0, 0, 0.56);
+  }
+  body.shadow-stage .card .warp,
+  body.shadow-stage .card .tint,
+  body.shadow-stage .card::before { display: none; }
+  body.shadow-stage .pill { display: none; }
+  body.no-blur .card .warp { filter: saturate(132%) brightness(0.82); }
+  body.no-blur .pill .warp { filter: saturate(138%) brightness(0.88); }
   body.only-a1 .card .tint { background-image: radial-gradient(280px circle at 72% 8%, rgba(240,245,249,0.10), transparent 60%); }
   body.only-a2 .card .tint { background-image: radial-gradient(92% 74% at 108% -8%, rgba(205,215,224,0.075), transparent 46%); }
   body.only-a3 .card .tint { background-image: linear-gradient(116deg, transparent 8%, rgba(255,255,255,0.052) 18%, transparent 30%); }
@@ -207,6 +218,12 @@
   }
   if (params.get("border") === "0") {
     document.body.classList.add("no-border");
+  }
+  if (params.get("scene") === "shadow") {
+    document.body.classList.add("shadow-stage");
+  }
+  if (params.get("blur") === "0") {
+    document.body.classList.add("no-blur");
   }
   if (params.get("warp") === "1") {
     document.body.classList.add("warp-only");

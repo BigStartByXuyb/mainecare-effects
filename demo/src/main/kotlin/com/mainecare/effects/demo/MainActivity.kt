@@ -50,6 +50,8 @@ class MainActivity : ComponentActivity() {
         val gateBefore = intent.getStringExtra("before") != "0"
         val gateSheen = intent.getStringExtra("sheen") != "0"
         val gateBorder = intent.getStringExtra("border") != "0"
+        val gateBlur = intent.getStringExtra("blur") != "0"
+        val gateScene = intent.getStringExtra("scene")
         val gateBackground = when (intent.getStringExtra("bg")) {
             "photo" -> "backdrop.png"
             "obsidian" -> "backdrop-obsidian.png"
@@ -74,6 +76,8 @@ class MainActivity : ComponentActivity() {
                     gateBefore = gateBefore,
                     gateSheen = gateSheen,
                     gateBorder = gateBorder,
+                    gateBlur = gateBlur,
+                    gateScene = gateScene,
                     gateBeforeStrength = gateBeforeStrength,
                     gateBackground = gateBackground,
                     gateBlurSigmaScale = gateBlurSigmaScale,
@@ -94,6 +98,8 @@ private fun DemoRoot(
     gateBefore: Boolean,
     gateSheen: Boolean,
     gateBorder: Boolean,
+    gateBlur: Boolean,
+    gateScene: String?,
     gateBeforeStrength: Float?,
     gateBackground: String,
     gateBlurSigmaScale: Float,
@@ -107,6 +113,8 @@ private fun DemoRoot(
             beforeEnabled = gateBefore,
             sheenEnabled = gateSheen,
             borderEnabled = gateBorder,
+            blurEnabled = gateBlur,
+            sceneAsset = gateScene,
             beforeStrength = gateBeforeStrength,
             backgroundAsset = gateBackground,
             blurSigmaScale = gateBlurSigmaScale,

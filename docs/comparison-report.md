@@ -132,6 +132,27 @@ a shared live backdrop that includes surface shadows, which is phase-2 work.
 
 The stress scenes are not called “100%” until they meet the same thresholds.
 
+### Stress controls and attainable ceiling
+
+| Control | Photo SSIM / MAE / >Δ5 | Obsidian SSIM / MAE / >Δ5 |
+| --- | --- | --- |
+| Baseline | 0.99318 / 0.796 / 0.994% | 0.99147 / 0.792 / 0.410% |
+| No card/outer shadow | **0.99369** / **0.678** / 0.633% | **0.99299** / **0.663** / 0.368% |
+| Live shadowed stage (diagnostic) | 0.99327 / 0.769 / 0.575% | 0.99155 / 0.783 / 0.354% |
+| No blur (grade only) | 0.99240 / 0.818 / 1.025% | 0.99088 / 0.799 / 0.407% |
+
+Removing the card shadow gives the best result but still misses 0.995; removing blur makes
+the comparison worse. Feeding a scene bitmap that already includes the card shadow recovers
+the pill core but not the frame, because the short pill’s border/highlight/alpha
+rasterization and CSS-vs-Android edge compositing remain. The measured ceiling for the
+current static-backdrop, per-surface-shadow architecture is ≈0.994 SSIM.
+
+Visual tail: 99.4–99.6% of pixels are within Δ5; >Δ20 is 0.03–0.04%; max Δ is 62–74 and is
+localized to the pill border. It is not visible at 1:1; close-up inspection shows a slight
+pill-edge halo. Options are to accept the ceiling, change to a shared live backdrop with
+native short-element compositing (phase 2), or rely on a V2528A device comparison — the last
+is required anyway but is not a substitute for the first two.
+
 ## 4. Motion gate — PASS for the measured runs
 
 - Unit test: 20 consecutive 60 Hz spring samples match the JS `springStep` within 1e-4.

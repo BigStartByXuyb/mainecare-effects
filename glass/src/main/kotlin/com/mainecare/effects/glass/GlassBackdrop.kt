@@ -53,6 +53,7 @@ val LocalGlassBackdrop = staticCompositionLocalOf<GlassBackdropState?> { null }
 class GlassBackdropState(
     val image: ImageBitmap,
     val contentScale: ContentScale = ContentScale.Crop,
+    val sceneImage: ImageBitmap? = null,
     private val graphicsLayer: GraphicsLayer,
     private val blurSigmaScale: Float = 1.4f,
 ) {
@@ -144,11 +145,12 @@ class GlassBackdropState(
 fun rememberGlassBackdrop(
     image: ImageBitmap,
     contentScale: ContentScale = ContentScale.Crop,
+    sceneImage: ImageBitmap? = null,
     blurSigmaScale: Float = 1.4f,
 ): GlassBackdropState {
     val graphicsLayer = rememberGraphicsLayer()
-    return remember(image, contentScale, graphicsLayer, blurSigmaScale) {
-        GlassBackdropState(image, contentScale, graphicsLayer, blurSigmaScale)
+    return remember(image, contentScale, sceneImage, graphicsLayer, blurSigmaScale) {
+        GlassBackdropState(image, contentScale, sceneImage, graphicsLayer, blurSigmaScale)
     }
 }
 
@@ -161,10 +163,11 @@ fun GlassBackdrop(
     image: ImageBitmap,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    sceneImage: ImageBitmap? = null,
     blurSigmaScale: Float = 1.4f,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val state = rememberGlassBackdrop(image, contentScale, blurSigmaScale)
+    val state = rememberGlassBackdrop(image, contentScale, sceneImage, blurSigmaScale)
     CompositionLocalProvider(LocalGlassBackdrop provides state) {
         Box(
             modifier = modifier

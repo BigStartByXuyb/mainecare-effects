@@ -109,6 +109,48 @@ Evidence: `gate-photo-side-d0.png`, `gate-photo-diff-d0.png`,
 These scenes are part of the phase-1 report. They must pass before the gate can be called
 “100% on arbitrary backdrops”; the canonical v21 pass is not a substitute.
 
+### Stress control matrix
+
+Each row changes one variable on both renderers; no threshold is changed.
+
+| Control | Photo SSIM | Photo MAE | Photo >Δ5 | Obsidian SSIM | Obsidian MAE | Obsidian >Δ5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Baseline (current) | 0.99318 | 0.796 | 0.994% | 0.99147 | 0.792 | 0.410% |
+| No card/outer shadow | **0.99369** | **0.678** | 0.633% | **0.99299** | **0.663** | 0.368% |
+| Live shadowed stage (diagnostic) | 0.99327 | 0.769 | 0.575% | 0.99155 | 0.783 | 0.354% |
+| No blur (grade only) | 0.99240 | 0.818 | 1.025% | 0.99088 | 0.799 | 0.407% |
+
+- **Card shadow** is real: removing it raises photo SSIM .99318 → .99369 and pill core MAE
+  3.29 → 1.81. The live-stage control (a scene bitmap that already contains the card shadow)
+  recovers the pill core to 1.62 but does not cross the frame threshold.
+- **Blur kernel** is not the limiter: removing blur lowers SSIM (.99318 → .99240,
+  .99147 → .99088) instead of improving it.
+- **Static backdrop** is part of the residual but not the whole: the live shadowed stage
+  improves the pill’s core and over-Δ5 count, yet the frame remains at .99327/.99155 because
+  the short pill’s border/highlight/alpha rasterization and the CSS vs Android edge
+  compositing still differ.
+- No single control, nor the shadow-off upper bound, reaches 0.995. The measured ceiling for
+  this static-backdrop/per-surface-shadow architecture is ≈**0.994 SSIM** on the photo scene.
+
+### Visual impact at the ceiling
+
+Photo baseline: 99.4% of pixels within Δ5, 0.21% above Δ10, 0.042% above Δ20, max Δ73.
+Obsidian: 99.6% within Δ5, 0.13% above Δ10, 0.030% above Δ20, max Δ62. The tail is localized
+to the pill border/top highlight and the shadowed edge; at 1:1 viewing it is not perceptible,
+and only close-up inspection of the pill edge shows a slight halo/contrast shift. The
+canonical scene does not show this tail because its backdrop is low-frequency.
+
+### Options
+
+1. **Accept the measured ceiling** — keep the canonical PASS, document the stress scenes as
+   non-passes, and do not merge/integrate until the other gates are accepted.
+2. **Change the rendering path** — add a shared live backdrop that captures rendered surface
+   shadows and implement the short-element alpha/border compositing natively (phase 2). This
+   is the only path found that can plausibly cross 0.995; it is not a parameter tweak.
+3. **Device-only comparison** — rerun the same thresholds on V2528A at native scale. This is
+   required regardless, but the controls above suggest rasterization/compositing differences
+   will persist, so it is not a substitute for option 1 or 2.
+
 ## 4. Layer-by-layer parameter gate
 
 Values transcribed from `feeding-v21-obsidian.css` / `feeding-v6-shell.css`; compositing
