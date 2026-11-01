@@ -42,31 +42,33 @@ Difference image (bright = larger Δ; full frame):
 
 | Region | MAE | RMSE | Max Δ | > Δ5 | > Δ10 |
 | --- | --- | --- | --- | --- | --- |
-| Whole 1024×2216 frame | 2.775 | 6.884 | 110 | 13.49% | 7.95% |
-| Card (898×525) | 3.59 | 6.68 | 105 | 12.7% | 2.8% |
-| Pill (347×95) | 12.16 | 15.35 | 60 | 81.3% | 49.2% |
-| Background top | 1.04 | 1.46 | 9 | 0.7% | 0% |
-| Background bottom | 1.26 | 3.15 | 41 | 3.6% | 2.1% |
+| Whole 1024×2216 frame | 1.243 | 2.654 | 69 | 5.05% | 1.44% |
+| Card (898×525) | 3.77 | 5.22 | 58 | 18.5% | 2.5% |
+| Pill (347×95) | 12.66 | 14.70 | 69 | 83.3% | 63.2% |
 
-Whole-frame SSIM 0.97836, PSNR 31.37 dB. Required: SSIM ≥ 0.995, MAE ≤ 1.0, ≥99% within Δ5.
-**Not met.**
+Whole-frame SSIM 0.98832, PSNR 39.65 dB. Required: SSIM ≥ 0.995, MAE ≤ 1.0, ≥99% within Δ5.
+**Not met**, but this iteration cut whole-frame MAE by 55% (2.775 → 1.243) and raised SSIM
+from 0.9784 to 0.9883.
 
-The background alignment is good (MAE ~1, no structural error), which isolates the mismatch to
-the material: CSS `backdrop-filter` plus five background-image layers is reproduced by a single
-AGSL pass with a pre-blurred bitmap, and the remaining differences are exactly the parts where
-those models differ:
+The background alignment is good, which isolates the mismatch to the material. Changes made in
+this review iteration:
 
-- **Blur model.** The bitmap is downscaled to 360px and blurred with three box passes. CSS
-  `blur(34px)` is a Gaussian in the element's own compositing pass. Bright, high-contrast areas
-  near the card's top-right are ~7/255 darker on Android.
-- **Layer model.** The v21 `feature-card::before` diagonal/repeating texture is not ported.
-  The advice `::after` bottom glow and the modal/toast variants are also not ported.
-- **Edge model.** Compose strokes/`Modifier.shadow` are not CSS `box-shadow` (spread, blur and
-  inset shadow profiles differ). The border/highlight accounts for the max-Δ outliers at the
-  card outline.
-- **Pill.** Its 36dp height makes the inset shadow and the 1px border a much larger fraction of
-  the surface; the pill is the worst region and is reported separately rather than averaged
-  away.
+- **Blur model.** Replaced the 3-pass box with a separable Gaussian in **linear light**,
+  calibrated to 0.75× the CSS sigma at a 300px working resolution. Against a blur-only web
+  reference, the raw interior MAE fell from 5.28 (sRGB box) to 3.49 (linear Gaussian). The
+  remaining raw-blur gap is the Chromium kernel/resampling, not the color space.
+- **Reference bug fixed.** The web gate used default `content-box`, so its 1px border enlarged
+  the card/pill by 2 CSS px. It now uses `border-box`; the card max Δ fell from 112 to 58.
+- **Shadow.** Compose elevation was replaced with a RenderEffect `Decal` shadow (offset 24dp,
+  Gaussian spread calibrated to 42dp, alpha .56). The earlier `Clamp` mode painted a solid
+  halo over the frame; `Decal` removed that. The shadow tails still differ from CSS.
+- **Edge model.** The web card now carries the same tint underlay as v21, and the Android top
+  highlight was moved inside the border. Border/highlight still account for most of the card
+  error.
+- **Layer model.** `feature-card::before` is now ported at a calibrated 0.5 strength;
+  `advice::after` is implemented. The browser mask and the shader mask still differ.
+- **Pill.** Its 36dp height makes the inset shadow and the 1px border a larger fraction of the
+  surface; the pill remains the worst region and is reported separately.
 
 A debug shader output of constant 0.5 renders as 127, so the shader writes sRGB rather than
 linear; the difference is not a gamma mismatch.
@@ -79,37 +81,40 @@ linear; the difference is not a gamma mismatch.
 
 | Region | MAE | RMSE | Max Δ | > Δ5 | > Δ10 |
 | --- | --- | --- | --- | --- | --- |
-| Whole frame | 3.053 | 7.327 | 116 | 15.65% | 9.07% |
-| Card | 4.51 | 7.5 | 110 | 21.9% | 5.0% |
-| Pill | 23.83 | 25.28 | 60 | 99.7% | 95.4% |
+| Whole frame | 1.641 | 3.821 | 71 | 9.47% | 3.59% |
+| Card | 5.25 | 7.02 | 63 | 39.0% | 10.8% |
+| Pill | 24.19 | 25.76 | 71 | 93.5% | 92.3% |
 
-Whole-frame SSIM 0.97540, PSNR 30.83 dB. Enabling displacement changes 420,403 pixels with a
-maximum channel Δ of 55, so refraction is active; the gate fails because the material baseline
-already fails and the pill exposes the map-window difference:
+Whole-frame SSIM 0.98406, PSNR 36.49 dB. Displacement is active; the gate fails because the
+material baseline already fails and the displacement/edge model still differs:
 
-- liquid-glass-react puts the displacement map in a 170% filter region with
-  `preserveAspectRatio="xMidYMid slice"`. The shader currently samples the map over the card
-  directly (the attempted 170%-window port made the pill worse and was reverted). The card is
-  close because its aspect ratio is near the map's; the 132×36 pill is not.
-- The aberration scales are ported with the correct sign (`S`, `S−a*.05`, `S−a*.1` for
-  R/G/B) and the discrete edge mask is ported. The reference's 0.28px Gaussian on the
-  aberrated channels is not.
+- `displacementScale` is now multiplied by display density, fixing a device-pixel vs CSS-pixel
+  bug (the React scale is in CSS px). The visible change is small because the reference edge
+  mask is only ~11% outside the map's extremes.
+- The map is sampled over the card directly. A 170% filter-region window plus `slice` was
+  tested with four candidate mappings; the MAE change was below 0.01, so it was reverted.
+- The aberration scales use the correct sign (`S`, `S−a*.05`, `S−a*.1` for R/G/B) and the
+  discrete edge mask is ported. The reference's 0.28px Gaussian on the aberrated channels is
+  not.
 
 ## 3. Parameter gate — mostly exact, not complete
 
 The values in `docs/golden-gate.md` are checked line by line. Highlights:
 
-- Card tint `rgba(10,12,15,.56)`, blur 34, saturate 132%, brightness .82: exact values.
-- Advice tint `.66`, blur 32, saturate 134%, brightness .80, gold top edge: exact values;
-  bottom `::after` glow missing.
-- Meal front `.52` / 22 / 132% / .84, radius 16: exact values; selected gold border partial.
-- Insight `.76` / 26 / 132% / .84, radius 20: exact values.
-- Dock `.40` / 24 / 138% / .88 plus glass-sheen: exact values; pill inset-shadow profile
+- Card tint `rgba(10,12,15,.56)`, blur 34, saturate 132%, brightness .82: values exact;
+  blur is now a linear-light Gaussian calibrated to 0.75× sigma.
+- Advice tint `.66`, blur 32, saturate 134%, brightness .80, gold top edge: values exact;
+  bottom `::after` glow implemented outside the card gate.
+- Meal front `.52` / 22 / 132% / .84, radius 16: values exact; selected gold border partial.
+- Insight `.76` / 26 / 132% / .84, radius 20: values exact.
+- Dock `.40` / 24 / 138% / .88 plus glass-sheen: values exact; pill inset-shadow profile
   differs.
+- Card `::before`: ported at 0.5 strength; browser mask vs shader mask still differs.
+- Card shadow: RenderEffect Decal with calibrated spread; CSS tails still differ.
 - Displacement maps: byte-identical to liquid-glass-react 1.1.1.
 
-The gate is **FAIL** because “100%” includes the missing `::before`/`::after` layers and the
-shadow model, not just the numeric CSS values.
+The gate is **FAIL** because “100%” includes the remaining `::before`/pill/border/shadow
+differences, not just the numeric CSS values.
 
 ## 4. Motion gate — PASS for the measured runs
 
@@ -138,11 +143,11 @@ captured locally but is not committed (binary size); the numeric trace is strong
 | Deck run 2 (telemetry off) | 526 | 35 (6.65%) | 24 ms | 36 ms | 57 ms | 3 | 139.7 MB |
 | Glass (card drags) | 393 | 18 (4.58%) | 20 ms | 29 ms | 34 ms | 1 | 116.5 MB |
 
-Required: 0 janky, P95 ≤ 17ms. **Not met.** The two deck runs bracket host-load variance
-(P50 18–24ms, P95 32–36ms); the glass run is steadier (P50 20ms, P95 29ms). The emulator is
-running with a reduced 1.5GB allocation because the host page file was exhausted, and the host
-is shared with other workloads; this is not a V2528A result. Removing per-frame `CardDeck`
-recomposition helped one run but did not reach the threshold.
+Required: 0 janky, P95 ≤ 17ms. **Not met.** These numbers predate the material fixes and were
+not remeasured; per review, emulator performance is diagnostic only. The two deck runs bracket
+host-load variance (P50 18–24ms, P95 32–36ms); the glass run is steadier (P50 20ms, P95 29ms).
+The emulator is running with a reduced 1.5GB allocation because the host page file was
+exhausted, and the host is shared with other workloads; this is not a V2528A result.
 
 ## 6. Comparison with the reference libraries
 
@@ -155,13 +160,13 @@ recomposition helped one run but did not reach the threshold.
 
 ## 7. What is required before an app integration / 100% claim
 
-1. Replace the box-blur approximation with a reference-matching Gaussian (or calibrate the
-   box passes against the gate until the card MAE is below threshold).
-2. Port `feature-card::before`, `advice::after`, and the remaining per-layer textures, or
-   explicitly descope them with the user.
-3. Replace `Modifier.shadow` with a CSS-profile shadow (RenderEffect or a blurred shape) and
-   tune the inset shadow for small surfaces (pill).
-4. Implement the 170% filter-region + `slice` map window exactly, especially for the pill.
+1. Close the remaining raw-blur gap (linear Gaussian MAE 3.49) and the card edge gap; the
+   whole-frame MAE is 1.243, but the card is 3.77 and the pill is 12.66.
+2. Refine `feature-card::before` / `advice::after` and the remaining per-layer textures, or
+   explicitly descope them with the user. The current `::before` is a 0.5-strength
+   approximation.
+3. Tune the inset-shadow profile and the pill border/underlay; the pill is the worst region.
+4. Port the reference's 0.28px Gaussian on the aberrated channels and re-check the map window.
 5. Re-run the gate on V2528A at its native resolution/refresh rate; the emulator numbers are
    pre-acceptance only.
 6. Add the reduced-transparency/reduced-motion switches and a live backdrop adapter before

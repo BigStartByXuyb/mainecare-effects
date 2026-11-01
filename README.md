@@ -42,7 +42,7 @@ logs).
 The gate is defined in [`docs/golden-gate.md`](docs/golden-gate.md) and the measured results
 are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 
-- Static material: **FAIL** (SSIM 0.9784, MAE 2.78; target SSIM ≥0.995, MAE ≤1.0).
+- Static material: **FAIL** (SSIM 0.9883, MAE 1.24; target SSIM ≥0.995, MAE ≤1.0).
 - Displacement: **FAIL** (SSIM 0.9754, MAE 3.05; target SSIM ≥0.99, MAE ≤1.5).
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).

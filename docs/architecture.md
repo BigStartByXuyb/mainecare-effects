@@ -87,10 +87,11 @@ telemetry sink used by the demo to record `deck.progress`, `coverflow.center` an
 1. **Backdrop.** The page provides a bitmap (photo or generated obsidian). `GlassBackdrop`
    draws it, records its root bounds and exposes `GlassBackdropState` through
    `LocalGlassBackdrop`.
-2. **Blur.** `GlassBackdropState.blurred(radiusPx)` downscales the bitmap to at most 360 px on
-   the long side, then applies three separable box passes (clamped edges). Results are cached
-   by rounded radius. The downscale + 3-pass box blur approximates the CSS Gaussian; it runs
-   once per distinct material, not per frame.
+2. **Blur.** `GlassBackdropState.blurred(radiusPx)` downscales the bitmap to at most 300 px on
+   the long side, then applies a separable Gaussian in linear light (sigma = 0.75 × the CSS
+   blur radius, clamped edges). Results are cached by rounded radius. The 0.75 factor is a
+   calibration against Chromium's blur kernel; it runs once per distinct material, not per
+   frame.
 3. **Source mapping.** A `GlassSurface` records its own root bounds. With `ContentScale.Crop`
    the mapping from surface pixels to bitmap pixels is computed from the drawn image size and
    the centered crop offset. The shader receives `uBackdropOrigin`, `uBackdropScale` and
@@ -98,8 +99,9 @@ telemetry sink used by the demo to record `deck.progress`, `coverflow.center` an
 4. **AGSL pass.** `LiquidGlassShader` samples the displacement map, applies three displaced
    samples (R/G/B), applies the reference edge mask, then saturation, brightness, tint and the
    v21 sheen layers. The shader output is clipped by the Compose shape.
-5. **Compose edges.** Border, top highlight, gold top line and the bottom inner shadow are
-   drawn by Compose after the shader, so they stay crisp and are not displaced.
+5. **Compose edges.** A RenderEffect `Decal` shadow sits behind the card (offset/blur/alpha
+   per material); border, top highlight, gold top line and the bottom inner shadow are drawn
+   by Compose after the shader, so they stay crisp and are not displaced.
 
 The blur is precomputed into the bitmap, so the shader is a single pass with map + backdrop
 lookups. `interactive=true` tracks a pointer without consuming the gesture; the pointer shifts
@@ -124,12 +126,12 @@ the sheen by `elasticity * 0.1` in UV space.
 2. **Color space.** A debug shader output of constant 0.5 renders as 127, so the shader writes
    sRGB rather than linear; gamma conversion is ruled out. The remaining card difference is in
    the material/blur approximation, not the output color space.
-3. **Missing v21 layers.** The `feature-card::before` diagonal/repeating texture, the
-   `advice::after` bottom glow, the pet avatar material and the modal/toast variants are not
-   yet ported. They are listed per layer in the gate table.
-4. **Shadow.** Compose `Modifier.shadow` is an elevation shadow, not the CSS
-   `0 24px 52px rgba(0,0,0,.56)` spread. The gate measures the difference; a RenderEffect
-   shadow is the phase-2 option.
+3. **Missing / approximate v21 layers.** `feature-card::before` is ported at a calibrated 0.5
+   strength, `advice::after` is implemented, and the pet avatar/modal/toast variants are not
+   ported. The browser mask and shader mask still differ; the gate table lists each layer.
+4. **Shadow.** A RenderEffect `Decal` shadow replaces `Modifier.shadow` (offset 24dp, sigma
+   42dp, alpha .56 for the card), but the tails and inset profile still differ from CSS
+   `box-shadow`, especially on the pill.
 5. **Reduced transparency / reduced motion.** Not exposed yet. The app adapter must be able to
    disable the shader (tint-only fallback) and zero animations; this is an API requirement for
    phase 2.

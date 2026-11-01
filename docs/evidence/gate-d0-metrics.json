@@ -1,15 +1,15 @@
 {
-  "left": "verification/results/android-gate-d0-crop.png",
-  "right": "verification/web-reference/gate-web-d0.png",
+  "left": "verification/results/final2-d0-crop.png",
+  "right": "verification/results/w5-d0-s1-b1.png",
   "width": 1024,
   "height": 2216,
-  "meanAbsoluteError": 2.775198191655385,
-  "rmse": 6.883687210377526,
-  "psnr": 31.374381046961123,
-  "ssim": 0.9783628070035257,
-  "maxChannelDiff": 110,
-  "percentOver2": 24.51185095611462,
-  "percentOver5": 13.485420309679602,
-  "percentOver10": 7.945719694833032,
-  "percentOver20": 4.226937965365524
+  "meanAbsoluteError": 1.2427255788865073,
+  "rmse": 2.6541727395163472,
+  "psnr": 39.65221992253071,
+  "ssim": 0.9883244818991446,
+  "maxChannelDiff": 69,
+  "percentOver2": 14.31197293828971,
+  "percentOver5": 5.049392204422383,
+  "percentOver10": 1.439195763763538,
+  "percentOver20": 0.3094945143276173
 }

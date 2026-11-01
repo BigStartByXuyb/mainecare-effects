@@ -6,6 +6,7 @@ import android.graphics.BitmapShader
 import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.graphics.Paint as AndroidPaint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
@@ -22,15 +23,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -102,57 +105,68 @@ fun GlassSurface(
     }
 
     Box(
-        modifier = modifier
-            .onGloballyPositioned {
-                surfaceBounds = it.boundsInRoot()
-                surfaceSize = it.size.toSize()
-            }
-            .shadow(
-                elevation = material.shadowElevation,
-                shape = shape,
-                clip = false,
-                ambientColor = Color.Black,
-                spotColor = Color.Black,
-            )
-            .clip(shape)
-            .drawBehind {
-                val canSample = backdrop != null &&
-                    backdropBitmap != null &&
-                    surfaceBounds.width > 0f &&
-                    surfaceBounds.height > 0f &&
-                    backdrop.boundsInRoot.width > 0f
-                if (canSample) {
-                    bindShader(
-                        shader = shader,
-                        paint = paint,
-                        backdrop = backdrop!!,
-                        backdropBitmap = backdropBitmap!!,
-                        backdropShader = backdropShader!!,
-                        mapBitmap = mapBitmap,
-                        mapShader = mapShader,
-                        surfaceBounds = surfaceBounds,
-                        surfaceSize = surfaceSize,
-                        params = params,
-                        material = material,
-                        pointer = pointer,
-                        debugOutput = debugOutput,
-                    )
-                    drawIntoCanvas { canvas ->
-                        canvas.nativeCanvas.drawRect(0f, 0f, size.width, size.height, paint)
-                    }
-                } else {
-                    drawRect(material.tint)
-                }
-                drawInnerShadow(material, size)
-            }
-            .drawWithContent {
-                drawContent()
-                drawBorderAndHighlights(material, params.cornerRadius.toPx(), size)
-            }
-            .then(interaction),
-        contentAlignment = contentAlignment,
+        modifier = modifier.onGloballyPositioned {
+            surfaceBounds = it.boundsInRoot()
+            surfaceSize = it.size.toSize()
+        },
     ) {
-        content()
+        if (material.shadowAlpha > 0f && material.shadowBlurSigmaDp > 0f) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .graphicsLayer {
+                        translationY = material.shadowOffsetYDp.dp.toPx()
+                        val sigma = material.shadowBlurSigmaDp.dp.toPx()
+                        renderEffect = BlurEffect(sigma, sigma, TileMode.Decal)
+                        alpha = material.shadowAlpha
+                    }
+                    .background(Color.Black, shape),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .clip(shape)
+                .drawBehind {
+                    val canSample = backdrop != null &&
+                        backdropBitmap != null &&
+                        surfaceBounds.width > 0f &&
+                        surfaceBounds.height > 0f &&
+                        backdrop.boundsInRoot.width > 0f
+                    if (canSample) {
+                        bindShader(
+                            shader = shader,
+                            paint = paint,
+                            backdrop = backdrop!!,
+                            backdropBitmap = backdropBitmap!!,
+                            backdropShader = backdropShader!!,
+                            mapBitmap = mapBitmap,
+                            mapShader = mapShader,
+                            surfaceBounds = surfaceBounds,
+                            surfaceSize = surfaceSize,
+                            params = params,
+                            material = material,
+                            pointer = pointer,
+                            debugOutput = debugOutput,
+                            density = density.density,
+                        )
+                        drawIntoCanvas { canvas ->
+                            canvas.nativeCanvas.drawRect(0f, 0f, size.width, size.height, paint)
+                        }
+                    } else {
+                        drawRect(material.tint)
+                    }
+                    drawInnerShadow(material, size)
+                }
+                .drawWithContent {
+                    drawContent()
+                    drawBorderAndHighlights(material, params.cornerRadius.toPx(), size)
+                }
+                .then(interaction),
+            contentAlignment = contentAlignment,
+        ) {
+            content()
+        }
     }
 }
 
@@ -185,6 +199,7 @@ private fun bindShader(
     material: GlassMaterial,
     pointer: Offset,
     debugOutput: Float,
+    density: Float,
 ) {
     val bounds = backdrop.boundsInRoot
     val factor = backdrop.contentScale.computeScaleFactor(
@@ -204,7 +219,7 @@ private fun bindShader(
     shader.setFloatUniform("uBackdropOrigin", glassX * blurFactor, glassY * blurFactor)
     shader.setFloatUniform("uBackdropScale", blurFactor / factor.scaleX, blurFactor / factor.scaleY)
     shader.setFloatUniform("uMapSize", mapBitmap.width.toFloat())
-    shader.setFloatUniform("uDisplacement", params.signedDisplacementScale)
+    shader.setFloatUniform("uDisplacement", params.signedDisplacementScale * density)
     shader.setFloatUniform("uAberration", params.aberrationIntensity)
     shader.setFloatUniform("uSaturation", material.saturation)
     shader.setFloatUniform("uBrightness", material.brightness)
@@ -219,6 +234,9 @@ private fun bindShader(
     shader.setFloatUniform("uSheen", material.sheenStrength)
     shader.setFloatUniform("uElasticity", params.elasticity)
     shader.setFloatUniform("uProcedural", if (params.mode == GlassMode.Shader) 1f else 0f)
+    shader.setFloatUniform("uBeforeLayer", if (material.beforeLayer) 1f else 0f)
+    shader.setFloatUniform("uBeforeStrength", material.beforeStrength)
+    shader.setFloatUniform("uAfterGlow", if (material.afterGlow) 1f else 0f)
     shader.setFloatUniform("uDebug", debugOutput)
     shader.setFloatUniform("uSheenTopCenter", material.sheenTopCenter.x, material.sheenTopCenter.y)
     shader.setFloatUniform("uSheenTopRadii", material.sheenTopRadii.x, material.sheenTopRadii.y)
@@ -268,8 +286,8 @@ private fun DrawScope.drawBorderAndHighlights(
     if (inset < size.width / 2f) {
         drawLine(
             color = material.topHighlightColor,
-            start = Offset(inset, stroke / 2f),
-            end = Offset(size.width - inset, stroke / 2f),
+            start = Offset(inset, stroke * 1.5f),
+            end = Offset(size.width - inset, stroke * 1.5f),
             strokeWidth = stroke,
         )
     }

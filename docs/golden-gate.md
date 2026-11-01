@@ -27,15 +27,16 @@ Criteria (whole 1024×2216 frame, and separately card/pill regions):
 
 Current status: **FAIL**.
 
-- Whole frame: SSIM 0.97836, MAE 2.775, PSNR 31.37 dB, 86.5% of pixels within Δ5.
-- Card region: MAE 3.59, RMSE 6.68, max Δ 105, 12.7% above Δ5, 2.8% above Δ10.
-- Pill region: MAE 12.16, RMSE 15.35, max Δ 60, 81.3% above Δ5, 49.2% above Δ10.
-- Background outside the card matches closely (top: MAE 1.04, 0.7% above Δ5; bottom:
-  MAE 1.26, 3.6% above Δ5; the bottom difference is PNG scaling/noise), so the backdrop
-  crop mapping is correct and the remaining difference is material compositing.
-- Improvement from the first gate run: MAE 3.97 → 2.78 and SSIM 0.9710 → 0.9784 after fixing
-  the CSS linear-gradient projection (the 325° dark layer had been painted from the wrong
-  corner).
+- Whole frame: SSIM 0.98832, MAE 1.243, PSNR 39.65 dB, 94.95% of pixels within Δ5.
+- Card region: MAE 3.77, RMSE 5.22, max Δ 58, 18.5% above Δ5, 2.5% above Δ10.
+- Pill region: MAE 12.66, RMSE 14.70, max Δ 69, 83.3% above Δ5, 63.2% above Δ10.
+- Background outside the card matches closely, so the backdrop crop mapping is correct and
+  the remaining difference is material and edge compositing.
+- Progress in this review iteration: MAE 2.775 → 1.243 and SSIM 0.9784 → 0.9883 after
+  (a) linear-light Gaussian blur calibrated to 0.75× the CSS sigma, (b) RenderEffect Decal
+  shadows with calibrated spread, (c) a border-box web reference and tint underlay, and
+  (d) the top highlight moved inside the border. Card max Δ fell from 112 to 58. The target
+  is still not met.
 
 Evidence: `docs/evidence/gate-card-side-d0.png`, `docs/evidence/gate-diff-d0.png`.
 
@@ -56,13 +57,14 @@ Criteria:
 
 Current status: **FAIL**.
 
-- Whole frame: SSIM 0.97540, MAE 3.053, PSNR 30.83 dB, 84.3% within Δ5.
-- Card region: MAE 4.51, 21.9% above Δ5; pill: MAE 23.83, 99.7% above Δ5.
-- The displacement itself is functioning (with/without images differ by 420,403 pixels, max
-  channel Δ 55 at the edges), but the material baseline already fails, and the pill exposes a
-  displacement-map window mismatch: the web filter places the map in a 170% filter region
-  with `preserveAspectRatio="slice"`, while the shader currently samples the map over the
-  card directly.
+- Whole frame: SSIM 0.98406, MAE 1.641, PSNR 36.49 dB, 90.53% within Δ5.
+- Card region: MAE 5.25, 39.0% above Δ5; pill: MAE 24.19, 93.5% above Δ5.
+- The displacement itself is functioning; `displacementScale` is now multiplied by display
+  density so the shader works in device pixels instead of CSS units. The map is still sampled
+  over the card directly. A 170% filter-region window with four candidate mappings was tested
+  in this iteration; the metric change was below 0.01 MAE, so it was reverted and the window
+  mismatch remains documented. The reference's 0.28px Gaussian on the aberrated channels is
+  not ported.
 
 Evidence: `docs/evidence/gate-card-side-d1.png`, `docs/evidence/gate-diff-d1.png`.
 
@@ -73,16 +75,16 @@ Every value is transcribed from `feeding-v21-obsidian.css` / `feeding-v6-shell.c
 | Layer | Value | Implementation | Status |
 | --- | --- | --- | --- |
 | Card tint | `rgba(10,12,15,.56)` | `MaineGlassMaterials.Card.tint` | value exact; blending under investigation |
-| Card blur | 34 px + saturate 132% + brightness .82 | `blurRadiusDp=34`, shader saturation/brightness | value exact; box-blur approximation |
+| Card blur | 34 px + saturate 132% + brightness .82 | linear-light Gaussian sigma 0.75×34dp at 300px working resolution | calibrated; blur-only raw MAE 3.49 |
 | Card border | `rgba(235,239,244,.16)` | `borderColor` + 1dp stroke | value exact; rasterization differs |
 | Card inner top | `inset 0 1px 0 rgba(255,255,255,.24)` | `topHighlightColor` | approximate line |
 | Card inner bottom | `inset 0 -22px 34px rgba(0,0,0,.36)` | `bottomInnerShadowColor`, `innerShadowDepthDp=34` | approximate gradient |
-| Card outer shadow | `0 24px 52px rgba(0,0,0,.56)` | `Modifier.shadow(24.dp)` | **differs** (elevation, no spread/blur match) |
+| Card outer shadow | `0 24px 52px rgba(0,0,0,.56)` | RenderEffect Decal blur, offset 24dp, sigma 42dp, alpha .56 | calibrated; still differs in the tails |
 | Card sheen | 5 CSS layers: 280px radial at 72%/8%, 92%×74% radial at 108%/-8%, 116°, 325°, 180° | shader uniforms per material | values now mapped; CSS-linear falloff |
-| Card `::before` | diagonal + repeating texture, masked | not implemented | **missing** |
+| Card `::before` | diagonal + repeating texture, masked | shader layer at 0.5 strength | ported; still differs from the browser mask |
 | Advice tint/blur | `.66` / 32px / 134% / .80 | `MaineGlassMaterials.Advice` | value exact |
 | Advice gold top line | 18px inset, champagne gradient | `goldTopEdge` | implemented |
-| Advice `::after` | bottom white glow | not implemented | **missing** |
+| Advice `::after` | bottom white glow | shader elliptical glow | implemented outside the card gate |
 | Meal front | `.52` / 22px / 132% / .84, radius 16 | `MealFront` | value exact |
 | Meal selected border | `rgba(227,192,138,.42)` | demo applies a gold border copy | partial (no inset gold) |
 | Insight | `.76` / 26px / 132% / .84, radius 20 | `Insight` | value exact |
@@ -129,7 +131,8 @@ Current status: **PASS for the measured run**.
 | PSS | ≤ 160 MB |
 | Software-GPU runs | not accepted as evidence |
 
-Current status: **FAIL** on the emulator run.
+Current status: **FAIL** on the emulator run. The numbers below predate the material fixes
+and were not remeasured; emulator performance is diagnostic only per review.
 
 Deck screen (10s of swipes, `trace=0`) run 1: 530 frames, 33 janky (6.23%), P50 18ms,
 P95 32ms, P99 44ms, 3 missed vsync, PSS 139.4MB. Run 2 after gating the telemetry collectors:
@@ -151,6 +154,8 @@ P95 ≤17ms thresholds are not met.
 | Color space / alpha compositing matches CSS sRGB | **PASS for output space** — a debug shader output of 0.5 renders as 127, so the shader writes sRGB, not linear. Residual card differences are compositing/blur approximations, not gamma. |
 | Edge sampling clamped | PASS (`BitmapShader` CLAMP) |
 | Displacement channels R=x, B=y; aberration sign | PASS after sign correction (`feDisplacementMap` uses `S` for R, `S - a*.05` for G, `S - a*.1` for B) |
+| Displacement scale in device pixels | PASS: multiplied by density; the web scale is in CSS px |
+| 0.28px Gaussian on aberrated channels | **MISSING** |
 | Edge mask (discrete 0 / a*.05 / 1) | ported in shader |
 | Missing/absent backdrop fallback | tint-only branch implemented |
 | Reduced transparency / reduced motion switch | **MISSING** (phase-2 API requirement) |

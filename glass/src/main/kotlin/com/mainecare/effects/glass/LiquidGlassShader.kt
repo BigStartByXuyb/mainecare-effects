@@ -27,6 +27,9 @@ uniform float2 uPointer;
 uniform float uSheen;
 uniform float uElasticity;
 uniform float uProcedural;
+uniform float uBeforeLayer;
+uniform float uBeforeStrength;
+uniform float uAfterGlow;
 uniform float uDebug;
 
 uniform float4 uSheenTopRight;
@@ -79,6 +82,7 @@ half4 main(float2 coord) {
     float2 oG;
     float2 oB;
     float edgeMask = 1.0;
+    float3 mapColor = float3(0.5);
 
     if (uProcedural > 0.5) {
         // liquid-glass-react shader mode: roundedRectSDF -> smoothStep displacement.
@@ -93,6 +97,7 @@ half4 main(float2 coord) {
         oB = raw * k * (1.0 - uAberration * 0.10);
     } else {
         half4 m = uMap.eval(uv * uMapSize);
+        mapColor = float3(m.r, m.g, m.b);
         float2 d = float2(m.r, m.b) - 0.5;
         float direction = sign(uDisplacement);
         oR = d * uDisplacement;
@@ -139,6 +144,46 @@ half4 main(float2 coord) {
     float3 shade = mix(uSheenVerticalTop.rgb, uSheenVerticalBottom.rgb, uv.y);
     col = mix(col, shade, a5);
 
+    if (uBeforeLayer > 0.5) {
+        float ta = gradientPosition(coord, 111.0);
+        float aa = linearBand(ta, 0.09, 0.18, 0.34) * 0.08 * uBeforeStrength;
+        col = mix(col, float3(0.957, 0.969, 0.976), aa);
+
+        float tb = gradientPosition(coord, 68.0);
+        float ab = linearBand(tb, 0.70, 0.74, 0.80) * 0.035 * uBeforeStrength;
+        col = mix(col, float3(0.886, 0.910, 0.925), ab);
+
+        float angle = 116.0 * 3.14159265 / 180.0;
+        float2 dir = float2(sin(angle), -cos(angle));
+        float2 center = uSize * 0.5;
+        float gradientLength = abs(uSize.x * dir.x) + abs(uSize.y * dir.y);
+        float posPx = (0.5 + dot(coord - center, dir) / max(gradientLength, 1.0)) *
+            gradientLength;
+        float phase = fract(posPx / 24.0);
+        float line = 1.0 - smoothStepCustom(0.0, 1.0 / 24.0, phase);
+        float mask = uv.y < 0.64
+            ? mix(1.0, 0.65, uv.y / 0.64)
+            : 0.65 * (1.0 - (uv.y - 0.64) / 0.36);
+        float al = line * clamp(mask, 0.0, 1.0) * 0.85 * 0.012 * uBeforeStrength;
+        col = mix(col, float3(1.0), al);
+    }
+
+    if (uAfterGlow > 0.5) {
+        float glow = radialFalloff(
+            uv,
+            float2(0.92, 1.17),
+            float2(0.386, 0.29),
+            0.68
+        ) * 0.46;
+        col = mix(col, float3(1.0), glow);
+    }
+
+    if (uDebug > 2.5) {
+        return half4(mapColor, 1.0);
+    }
+    if (uDebug > 1.5) {
+        return half4(orig.rgb, 1.0);
+    }
     if (uDebug > 0.5) {
         return half4(0.5, 0.5, 0.5, 1.0);
     }

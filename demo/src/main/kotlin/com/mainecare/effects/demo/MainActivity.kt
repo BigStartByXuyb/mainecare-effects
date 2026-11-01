@@ -46,6 +46,9 @@ class MainActivity : ComponentActivity() {
         val gateText = intent.getStringExtra("text") == "1"
         val gateDebug = intent.getStringExtra("debug")?.toFloatOrNull() ?: 0f
         val traceEnabled = intent.getStringExtra("trace") != "0"
+        val gateShadow = intent.getStringExtra("shadow") != "0"
+        val gateBefore = intent.getStringExtra("before") != "0"
+        val gateBeforeStrength = intent.getStringExtra("beforeStrength")?.toFloatOrNull()
         MotionTrace.sink = if (traceEnabled) {
             { line -> Log.i("MCEffectsMotion", line) }
         } else {
@@ -59,6 +62,9 @@ class MainActivity : ComponentActivity() {
                     gateText = gateText,
                     gateDebug = gateDebug,
                     traceEnabled = traceEnabled,
+                    gateShadow = gateShadow,
+                    gateBefore = gateBefore,
+                    gateBeforeStrength = gateBeforeStrength,
                 )
             }
         }
@@ -72,12 +78,18 @@ private fun DemoRoot(
     gateText: Boolean,
     gateDebug: Float,
     traceEnabled: Boolean,
+    gateShadow: Boolean,
+    gateBefore: Boolean,
+    gateBeforeStrength: Float?,
 ) {
     if (initialScreen == "gate") {
         GateScreen(
             forceDisplacement = gateDisplacement,
             showText = gateText,
             debugOutput = gateDebug,
+            shadowEnabled = gateShadow,
+            beforeEnabled = gateBefore,
+            beforeStrength = gateBeforeStrength,
         )
         return
     }

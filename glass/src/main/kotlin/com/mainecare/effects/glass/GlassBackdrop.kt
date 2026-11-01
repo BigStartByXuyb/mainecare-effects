@@ -29,6 +29,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.ceil
+import kotlin.math.exp
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 val LocalGlassBackdrop = staticCompositionLocalOf<GlassBackdropState?> { null }
@@ -60,7 +63,7 @@ class GlassBackdropState(
             val down = downscale(source, BLUR_MAX_DIMENSION)
             val factor = down.width / source.width.toFloat()
             val radius = (key * factor).roundToInt().coerceAtLeast(0)
-            val result = boxBlur(down, radius, passes = 3).asImageBitmap()
+            val result = gaussianBlur(down, radius.toFloat() * 0.75f).asImageBitmap()
             synchronized(blurCache) { blurCache[key] = result }
             result
         }
@@ -71,7 +74,7 @@ class GlassBackdropState(
     }
 
     private companion object {
-        const val BLUR_MAX_DIMENSION = 360
+        const val BLUR_MAX_DIMENSION = 300
     }
 }
 
@@ -136,77 +139,110 @@ private fun downscale(source: Bitmap, maxDimension: Int): Bitmap {
 }
 
 /** Three box passes, each separable, approximating a Gaussian with clamped edges. */
-private fun boxBlur(source: Bitmap, radius: Int, passes: Int): Bitmap {
-    if (radius <= 0) return source
+private fun gaussianBlur(source: Bitmap, sigma: Float): Bitmap {
+    if (sigma <= 0.01f) return source
     val width = source.width
     val height = source.height
-    var pixels = IntArray(width * height)
+    val pixels = IntArray(width * height)
     source.getPixels(pixels, 0, width, 0, 0, width, height)
-    val scratch = IntArray(width * height)
-    repeat(passes) {
-        blurHorizontal(pixels, scratch, width, height, radius)
-        blurVertical(scratch, pixels, width, height, radius)
+
+    // CSS blur is a Gaussian sigma in linear light. Convert first so bright
+    // highlights spread like the browser instead of staying too bright.
+    val current = FloatArray(width * height * 3)
+    for (i in pixels.indices) {
+        val c = pixels[i]
+        current[i * 3] = srgbToLinear(((c ushr 16) and 0xFF) / 255f)
+        current[i * 3 + 1] = srgbToLinear(((c ushr 8) and 0xFF) / 255f)
+        current[i * 3 + 2] = srgbToLinear((c and 0xFF) / 255f)
     }
-    return Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888).apply {
-        setPixels(pixels, 0, width, 0, 0, width, height)
+
+    val radius = ceil(sigma * 3f).toInt().coerceAtLeast(1)
+    val kernel = FloatArray(radius * 2 + 1)
+    var kernelSum = 0f
+    for (i in kernel.indices) {
+        val x = (i - radius) / sigma
+        kernel[i] = exp(-0.5f * x * x)
+        kernelSum += kernel[i]
     }
+    for (i in kernel.indices) {
+        kernel[i] /= kernelSum
+    }
+
+    val scratch = FloatArray(current.size)
+    blurHorizontalGaussian(current, scratch, width, height, radius, kernel)
+    blurVerticalGaussian(scratch, current, width, height, radius, kernel)
+
+    val out = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val outPixels = IntArray(width * height)
+    for (i in outPixels.indices) {
+        val r = (linearToSrgb(current[i * 3]) * 255f).roundToInt().coerceIn(0, 255)
+        val g = (linearToSrgb(current[i * 3 + 1]) * 255f).roundToInt().coerceIn(0, 255)
+        val b = (linearToSrgb(current[i * 3 + 2]) * 255f).roundToInt().coerceIn(0, 255)
+        outPixels[i] = (0xFF shl 24) or (r shl 16) or (g shl 8) or b
+    }
+    out.setPixels(outPixels, 0, width, 0, 0, width, height)
+    return out
 }
 
-private fun blurHorizontal(src: IntArray, dst: IntArray, width: Int, height: Int, radius: Int) {
-    val divisor = radius * 2 + 1
+private fun srgbToLinear(value: Float): Float =
+    if (value <= 0.04045f) value / 12.92f else ((value + 0.055f) / 1.055f).pow(2.4f)
+
+private fun linearToSrgb(value: Float): Float =
+    if (value <= 0.0031308f) value * 12.92f else 1.055f * value.pow(1f / 2.4f) - 0.055f
+
+private fun blurHorizontalGaussian(
+    src: FloatArray,
+    dst: FloatArray,
+    width: Int,
+    height: Int,
+    radius: Int,
+    kernel: FloatArray,
+) {
     for (y in 0 until height) {
         val row = y * width
-        var a = 0
-        var r = 0
-        var g = 0
-        var b = 0
-        for (i in -radius..radius) {
-            val c = src[row + i.coerceIn(0, width - 1)]
-            a += (c ushr 24) and 0xFF
-            r += (c ushr 16) and 0xFF
-            g += (c ushr 8) and 0xFF
-            b += c and 0xFF
-        }
         for (x in 0 until width) {
-            dst[row + x] = ((a / divisor) shl 24) or
-                ((r / divisor) shl 16) or
-                ((g / divisor) shl 8) or
-                (b / divisor)
-            val outgoing = src[row + (x - radius).coerceIn(0, width - 1)]
-            val incoming = src[row + (x + radius + 1).coerceIn(0, width - 1)]
-            a += ((incoming ushr 24) and 0xFF) - ((outgoing ushr 24) and 0xFF)
-            r += ((incoming ushr 16) and 0xFF) - ((outgoing ushr 16) and 0xFF)
-            g += ((incoming ushr 8) and 0xFF) - ((outgoing ushr 8) and 0xFF)
-            b += (incoming and 0xFF) - (outgoing and 0xFF)
+            var r = 0f
+            var g = 0f
+            var b = 0f
+            for (k in -radius..radius) {
+                val sample = (row + (x + k).coerceIn(0, width - 1)) * 3
+                val weight = kernel[k + radius]
+                r += src[sample] * weight
+                g += src[sample + 1] * weight
+                b += src[sample + 2] * weight
+            }
+            val out = (row + x) * 3
+            dst[out] = r
+            dst[out + 1] = g
+            dst[out + 2] = b
         }
     }
 }
 
-private fun blurVertical(src: IntArray, dst: IntArray, width: Int, height: Int, radius: Int) {
-    val divisor = radius * 2 + 1
-    for (x in 0 until width) {
-        var a = 0
-        var r = 0
-        var g = 0
-        var b = 0
-        for (i in -radius..radius) {
-            val c = src[i.coerceIn(0, height - 1) * width + x]
-            a += (c ushr 24) and 0xFF
-            r += (c ushr 16) and 0xFF
-            g += (c ushr 8) and 0xFF
-            b += c and 0xFF
-        }
-        for (y in 0 until height) {
-            dst[y * width + x] = ((a / divisor) shl 24) or
-                ((r / divisor) shl 16) or
-                ((g / divisor) shl 8) or
-                (b / divisor)
-            val outgoing = src[(y - radius).coerceIn(0, height - 1) * width + x]
-            val incoming = src[(y + radius + 1).coerceIn(0, height - 1) * width + x]
-            a += ((incoming ushr 24) and 0xFF) - ((outgoing ushr 24) and 0xFF)
-            r += ((incoming ushr 16) and 0xFF) - ((outgoing ushr 16) and 0xFF)
-            g += ((incoming ushr 8) and 0xFF) - ((outgoing ushr 8) and 0xFF)
-            b += (incoming and 0xFF) - (outgoing and 0xFF)
+private fun blurVerticalGaussian(
+    src: FloatArray,
+    dst: FloatArray,
+    width: Int,
+    height: Int,
+    radius: Int,
+    kernel: FloatArray,
+) {
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            var r = 0f
+            var g = 0f
+            var b = 0f
+            for (k in -radius..radius) {
+                val sample = ((y + k).coerceIn(0, height - 1) * width + x) * 3
+                val weight = kernel[k + radius]
+                r += src[sample] * weight
+                g += src[sample + 1] * weight
+                b += src[sample + 2] * weight
+            }
+            val out = (y * width + x) * 3
+            dst[out] = r
+            dst[out + 1] = g
+            dst[out + 2] = b
         }
     }
 }

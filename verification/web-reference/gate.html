@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <title>MaineCare Effects gate</title>
 <style>
+  *, *::before, *::after { box-sizing: border-box; }
   html, body {
     margin: 0;
     width: 390px;
@@ -25,6 +26,7 @@
     isolation: isolate;
   }
   .card {
+    background-color: rgba(10, 12, 15, 0.56);
     left: 24px;
     top: 120px;
     width: 342px;
@@ -46,6 +48,23 @@
     position: absolute;
     inset: 0;
   }
+  .warp { z-index: 0; }
+  .tint { z-index: 1; }
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    z-index: 2;
+    border-radius: 29px;
+    pointer-events: none;
+    background:
+      linear-gradient(111deg, transparent 9%, rgba(244, 247, 249, 0.08) 18%, transparent 34%),
+      linear-gradient(68deg, transparent 70%, rgba(226, 232, 236, 0.035) 74%, transparent 80%),
+      repeating-linear-gradient(116deg, rgba(255, 255, 255, 0.012) 0 1px, transparent 1px 24px);
+    -webkit-mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, 0.65) 64%, transparent);
+    mask-image: linear-gradient(180deg, #000, rgba(0, 0, 0, 0.65) 64%, transparent);
+    opacity: 0.85;
+  }
   .card .warp {
     background-image: url("backdrop.png");
     background-size: 390px 866.6667px;
@@ -64,6 +83,13 @@
   body.displace .pill .warp {
     filter: blur(24px) saturate(138%) brightness(0.88) url(#glassFilter);
   }
+  body.no-before .card::before { display: none; }
+  body.no-shadow .card, body.no-shadow .pill { box-shadow: none; }
+  body.raw .tint { display: none; }
+  body.raw .card::before { display: none; }
+  body.raw .card { box-shadow: none; border-color: transparent; background-color: transparent; }
+  body.raw .pill { display: none; }
+  body.raw .card .warp { filter: blur(34px); }
   .card .tint {
     background-color: rgba(10, 12, 15, 0.56);
     background-image:
@@ -151,6 +177,15 @@
   const params = new URLSearchParams(location.search);
   if (params.get("displacement") === "1") {
     document.body.classList.add("displace");
+  }
+  if (params.get("before") === "0") {
+    document.body.classList.add("no-before");
+  }
+  if (params.get("shadow") === "0") {
+    document.body.classList.add("no-shadow");
+  }
+  if (params.get("raw") === "1") {
+    document.body.classList.add("raw");
   }
 </script>
 </body>

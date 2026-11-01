@@ -26,7 +26,14 @@ import com.mainecare.effects.glass.MaineGlassMaterials
  * The frame is centered on a neutral gray field so the screenshot can be cropped exactly.
  */
 @Composable
-fun GateScreen(forceDisplacement: Boolean, showText: Boolean, debugOutput: Float = 0f) {
+fun GateScreen(
+    forceDisplacement: Boolean,
+    showText: Boolean,
+    debugOutput: Float = 0f,
+    shadowEnabled: Boolean = true,
+    beforeEnabled: Boolean = true,
+    beforeStrength: Float? = null,
+) {
     val backdrop = rememberBackdropAsset("backdrop.png") ?: return
     Box(
         modifier = Modifier
@@ -41,7 +48,11 @@ fun GateScreen(forceDisplacement: Boolean, showText: Boolean, debugOutput: Float
         ) {
             GlassBackdrop(image = backdrop, modifier = Modifier.fillMaxSize()) {
                 Box(Modifier.fillMaxSize()) {
-                    val base = MaineGlassMaterials.Card
+                    val base = MaineGlassMaterials.Card.copy(
+                        shadowAlpha = if (shadowEnabled) MaineGlassMaterials.Card.shadowAlpha else 0f,
+                        beforeLayer = beforeEnabled && MaineGlassMaterials.Card.beforeLayer,
+                        beforeStrength = beforeStrength ?: MaineGlassMaterials.Card.beforeStrength,
+                    )
                     val params = base.liquid.copy(
                         displacementScale = if (forceDisplacement) base.liquid.displacementScale else 0f,
                         aberrationIntensity = if (forceDisplacement) base.liquid.aberrationIntensity else 0f,
@@ -75,7 +86,9 @@ fun GateScreen(forceDisplacement: Boolean, showText: Boolean, debugOutput: Float
                             }
                         }
                     }
-                    val dock = MaineGlassMaterials.Dock
+                    val dock = MaineGlassMaterials.Dock.copy(
+                        shadowAlpha = if (shadowEnabled) MaineGlassMaterials.Dock.shadowAlpha else 0f,
+                    )
                     GlassSurface(
                         modifier = Modifier
                             .offset(x = 24.dp, y = 350.dp)
