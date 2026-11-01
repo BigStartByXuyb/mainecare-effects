@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/final-smooth-d0-crop.png",
+  "right": "verification/results/ws-current-d0.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 0.43963101567200663,
+  "rmse": 1.1227845249439428,
+  "psnr": 47.12487524403328,
+  "ssim": 0.995590547634632,
+  "maxChannelDiff": 43,
+  "percentOver2": 4.614918843073105,
+  "percentOver5": 0.547685864169675,
+  "percentOver10": 0.07760498928249097,
+  "percentOver20": 0.02692597867779783
+}

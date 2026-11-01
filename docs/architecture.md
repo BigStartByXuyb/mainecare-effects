@@ -88,20 +88,24 @@ telemetry sink used by the demo to record `deck.progress`, `coverflow.center` an
    draws it, records its root bounds and exposes `GlassBackdropState` through
    `LocalGlassBackdrop`.
 2. **Blur.** `GlassBackdropState.blurred(radiusPx)` renders the backdrop at screen geometry
-   into a Compose `GraphicsLayer`, applies a Skia `BlurEffect` at 540px long side with a
-   calibrated 1.4× sigma, then reads it back with `toImageBitmap()`. There is no CPU or
-   API-version fallback: API 33+ is the only target. Results are cached by rounded radius; the
-   work runs once per distinct material, not per frame.
+   into a Compose `GraphicsLayer`, applies a Skia `BlurEffect` at full screen resolution
+   (2160px cap) with a calibrated 1.4× sigma, then reads it back with `toImageBitmap()`. There
+   is no CPU or API-version fallback: API 33+ is the only target. Results are cached by
+   rounded radius; the work runs once per distinct material, not per frame.
 3. **Source mapping.** A `GlassSurface` records its own root bounds. With `ContentScale.Crop`
    the mapping from surface pixels to bitmap pixels is computed from the drawn image size and
    the centered crop offset. The shader receives `uBackdropOrigin`, `uBackdropScale` and
    `uSize`.
-4. **AGSL pass.** `LiquidGlassShader` samples the displacement map, applies three displaced
-   samples (R/G/B), applies the reference edge mask, then saturation, brightness, tint and the
-   v21 sheen layers. The shader output is clipped by the Compose shape.
+4. **AGSL pass.** `LiquidGlassShader` samples the displacement map through the SVG filter's
+   170% region and `slice` window, grades the blurred source (saturate/brightness) before
+   displacing, screen-blends the three channel layers with the blurred element alpha, then
+   applies tint and the v21 sheen layers in CSS paint order. The shader output is clipped by
+   the Compose shape.
 5. **Compose edges.** A RenderEffect `Decal` shadow sits behind the card (offset/blur/alpha
-   per material); border, top highlight, gold top line and the bottom inner shadow are drawn
-   by Compose after the shader, so they stay crisp and are not displaced.
+   per material); border, top highlight, gold top line and the Gaussian inner shadow are
+   drawn by Compose after the shader, so they stay crisp and are not displaced. Chrome
+   snaps a 1 CSS px border to whole device pixels and paints it over the card
+   background-color; the preset border colors are precomposited to that measured raster.
 
 The blur is precomputed into the bitmap, so the shader is a single pass with map + backdrop
 lookups. `interactive=true` tracks a pointer without consuming the gesture; the pointer shifts
@@ -126,12 +130,14 @@ the sheen by `elasticity * 0.1` in UV space.
 2. **Color space.** A debug shader output of constant 0.5 renders as 127, so the shader writes
    sRGB rather than linear; gamma conversion is ruled out. The remaining card difference is in
    the material/blur approximation, not the output color space.
-3. **Missing / approximate v21 layers.** `feature-card::before` is ported at a calibrated 0.5
-   strength, `advice::after` is implemented, and the pet avatar/modal/toast variants are not
-   ported. The browser mask and shader mask still differ; the gate table lists each layer.
-4. **Shadow.** A RenderEffect `Decal` shadow replaces `Modifier.shadow` (offset 24dp, sigma
-   42dp, alpha .56 for the card), but the tails and inset profile still differ from CSS
-   `box-shadow`, especially on the pill.
+3. **Missing / approximate v21 layers.** `feature-card::before` is ported with the inset
+   2px geometry, all-gradient vertical mask and a gate-calibrated 0.75 strength;
+   `advice::after` is implemented. The browser mask and shader phase still differ slightly.
+4. **Blur kernel on fine detail.** The canonical smooth gate passes, but the photo stress
+   gate still fails SSIM because Skia's blur kernel and Chromium's blur of the warp element
+   (including element-edge alpha) differ on high-frequency detail. The inset shadow now uses
+   the Gaussian profile and the card shadow uses a Decal blur; shadow tails remain a
+   reported difference.
 5. **Reduced transparency / reduced motion.** Not exposed yet. The app adapter must be able to
    disable the shader (tint-only fallback) and zero animations; this is an API requirement for
    phase 2.

@@ -34,7 +34,8 @@ adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.dem
 ```
 
 `screen` accepts `glass`, `deck` or `gate`. The gate screen is fixed at 390×844dp and accepts
-`displacement=0|1`, `text=0|1`, `debug=1` (constant 0.5 output) and `trace=0` (disable motion
+`displacement=0|1`, `text=0|1`, `shadow=0`, `before=0`, `bg=photo|obsidian`,
+`debug=1|2|3|4` (constant 0.5 / raw blur / map / graded warp) and `trace=0` (disable motion
 logs).
 
 ## Restoration gate
@@ -42,12 +43,17 @@ logs).
 The gate is defined in [`docs/golden-gate.md`](docs/golden-gate.md) and the measured results
 are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 
-- Static material: **FAIL** (SSIM 0.9884, MAE 1.24; target SSIM ≥0.995, MAE ≤1.0).
-- Displacement: **FAIL** (SSIM 0.9842, MAE 1.62; target SSIM ≥0.99, MAE ≤1.5).
+- Canonical smooth v21 feeding surface, static: **PASS** (SSIM 0.99559, MAE 0.440,
+  99.45% within Δ5; target SSIM ≥0.995, MAE ≤1.0, ≥99% within Δ5).
+- Canonical smooth, displacement: **PASS** (SSIM 0.99556, MAE 0.428, 99.58% within Δ5;
+  target SSIM ≥0.99, MAE ≤1.5, ≥98% within Δ5).
+- Photo stress scene: **FAIL** (SSIM 0.9886, MAE 1.03); veined Obsidian stress scene:
+  **FAIL SSIM** (0.9918). The residual is the Chromium vs Skia blur kernel on fine detail.
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
 - Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;
-  glass 4.58%, P95 29ms; target 0 janky, P95 ≤17ms). V2528A is not connected yet.
+  glass 4.58%, P95 29ms; target 0 janky, P95 ≤17ms). Predates the final material changes;
+  V2528A is not connected yet.
 
 No document claims a pass that the numbers do not support.
 
@@ -61,7 +67,9 @@ integration exists yet.
 - `verification/web-reference/gate.html` — Chromium reference at 390×844, optional
   `?displacement=1`.
 - `verification/compare-png.mjs` — MAE/RMSE/PSNR/SSIM/Δ-threshold metrics + diff image.
+- `verification/region-metrics.mjs` — per-region metrics for card, pill or named bands.
 - `verification/crop-gate.mjs` — locates the fixed frame in a 1080×2400 screenshot.
+- `verification/side-by-side.mjs` — builds the evidence side-by-side images.
 - `verification/run-gate.sh` — build/install/capture/compare helper (needs an emulator).
 - `verification/motion-fit.mjs` — scores a recorded coverflow trace against the JS spring.
 

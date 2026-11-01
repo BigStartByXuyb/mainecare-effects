@@ -48,7 +48,15 @@ class MainActivity : ComponentActivity() {
         val traceEnabled = intent.getStringExtra("trace") != "0"
         val gateShadow = intent.getStringExtra("shadow") != "0"
         val gateBefore = intent.getStringExtra("before") != "0"
+        val gateSheen = intent.getStringExtra("sheen") != "0"
+        val gateBorder = intent.getStringExtra("border") != "0"
+        val gateBackground = when (intent.getStringExtra("bg")) {
+            "photo" -> "backdrop.png"
+            "obsidian" -> "backdrop-obsidian.png"
+            else -> "backdrop-gate.png"
+        }
         val gateBeforeStrength = intent.getStringExtra("beforeStrength")?.toFloatOrNull()
+        val gateBlurSigmaScale = intent.getStringExtra("blurScale")?.toFloatOrNull() ?: 1.4f
         MotionTrace.sink = if (traceEnabled) {
             { line -> Log.i("MCEffectsMotion", line) }
         } else {
@@ -64,7 +72,11 @@ class MainActivity : ComponentActivity() {
                     traceEnabled = traceEnabled,
                     gateShadow = gateShadow,
                     gateBefore = gateBefore,
+                    gateSheen = gateSheen,
+                    gateBorder = gateBorder,
                     gateBeforeStrength = gateBeforeStrength,
+                    gateBackground = gateBackground,
+                    gateBlurSigmaScale = gateBlurSigmaScale,
                 )
             }
         }
@@ -80,7 +92,11 @@ private fun DemoRoot(
     traceEnabled: Boolean,
     gateShadow: Boolean,
     gateBefore: Boolean,
+    gateSheen: Boolean,
+    gateBorder: Boolean,
     gateBeforeStrength: Float?,
+    gateBackground: String,
+    gateBlurSigmaScale: Float,
 ) {
     if (initialScreen == "gate") {
         GateScreen(
@@ -89,7 +105,11 @@ private fun DemoRoot(
             debugOutput = gateDebug,
             shadowEnabled = gateShadow,
             beforeEnabled = gateBefore,
+            sheenEnabled = gateSheen,
+            borderEnabled = gateBorder,
             beforeStrength = gateBeforeStrength,
+            backgroundAsset = gateBackground,
+            blurSigmaScale = gateBlurSigmaScale,
         )
         return
     }

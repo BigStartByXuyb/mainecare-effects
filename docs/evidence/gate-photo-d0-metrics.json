@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/final-photo-d0-crop.png",
+  "right": "verification/results/ws-current-photo-d0.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 1.0267140082073556,
+  "rmse": 2.42111564825047,
+  "psnr": 40.450492915280584,
+  "ssim": 0.9885674051292888,
+  "maxChannelDiff": 76,
+  "percentOver2": 10.039467932084838,
+  "percentOver5": 2.858957228677798,
+  "percentOver10": 0.6803767345442239,
+  "percentOver20": 0.20738732513537905
+}

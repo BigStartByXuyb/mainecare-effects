@@ -32,9 +32,13 @@ fun GateScreen(
     debugOutput: Float = 0f,
     shadowEnabled: Boolean = true,
     beforeEnabled: Boolean = true,
+    sheenEnabled: Boolean = true,
+    borderEnabled: Boolean = true,
     beforeStrength: Float? = null,
+    backgroundAsset: String = "backdrop-gate.png",
+    blurSigmaScale: Float = 1.4f,
 ) {
-    val backdrop = rememberBackdropAsset("backdrop.png") ?: return
+    val backdrop = rememberBackdropAsset(backgroundAsset) ?: return
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -46,12 +50,23 @@ fun GateScreen(
                 .size(390.dp, 844.dp)
                 .clipToBounds(),
         ) {
-            GlassBackdrop(image = backdrop, modifier = Modifier.fillMaxSize()) {
+            GlassBackdrop(
+                image = backdrop,
+                modifier = Modifier.fillMaxSize(),
+                blurSigmaScale = blurSigmaScale,
+            ) {
                 Box(Modifier.fillMaxSize()) {
                     val base = MaineGlassMaterials.Card.copy(
                         shadowAlpha = if (shadowEnabled) MaineGlassMaterials.Card.shadowAlpha else 0f,
                         beforeLayer = beforeEnabled && MaineGlassMaterials.Card.beforeLayer,
                         beforeStrength = beforeStrength ?: MaineGlassMaterials.Card.beforeStrength,
+                        sheenStrength = if (sheenEnabled) MaineGlassMaterials.Card.sheenStrength else 0f,
+                        borderColor = if (borderEnabled) MaineGlassMaterials.Card.borderColor else Color.Transparent,
+                        topHighlightColor = if (borderEnabled) {
+                            MaineGlassMaterials.Card.topHighlightColor
+                        } else {
+                            Color.Transparent
+                        },
                     )
                     val params = base.liquid.copy(
                         displacementScale = if (forceDisplacement) base.liquid.displacementScale else 0f,
@@ -88,6 +103,13 @@ fun GateScreen(
                     }
                     val dock = MaineGlassMaterials.Dock.copy(
                         shadowAlpha = if (shadowEnabled) MaineGlassMaterials.Dock.shadowAlpha else 0f,
+                        sheenStrength = if (sheenEnabled) MaineGlassMaterials.Dock.sheenStrength else 0f,
+                        borderColor = if (borderEnabled) MaineGlassMaterials.Dock.borderColor else Color.Transparent,
+                        topHighlightColor = if (borderEnabled) {
+                            MaineGlassMaterials.Dock.topHighlightColor
+                        } else {
+                            Color.Transparent
+                        },
                     )
                     GlassSurface(
                         modifier = Modifier

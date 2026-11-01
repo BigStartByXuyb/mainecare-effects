@@ -1,18 +1,23 @@
 # App adapter contract — proposal
 
 Status: **proposal, not final**. Do not add a dependency or integrate the library into
-MaineCare until the restoration gate passes and the user accepts phase 1.
+MaineCare until all gate scenes and the V2528A performance run pass and the user accepts
+phase 1.
 
 Date: 2026-11-01. Owner: mainecare-effects session. Consumer: MaineCare Android v21 session.
 
 ## 1. Gate status and dependency form
 
-The gate is **not passed**:
+The canonical smooth v21 feeding surface now passes; the stress scenes and device
+performance do not, so integration remains blocked:
 
-- Static material: FAIL (SSIM 0.98839, MAE 1.239; target SSIM ≥0.995, MAE ≤1.0).
-- Displacement: FAIL (SSIM 0.98418, MAE 1.623; target ≥0.99, ≤1.5).
+- Canonical static material: PASS (SSIM 0.99559, MAE 0.440, 0.548% above Δ5).
+- Canonical displacement: PASS (SSIM 0.99556, MAE 0.428, 0.423% above Δ5).
+- Photo stress scene: FAIL SSIM (0.98857) and MAE (1.027); veined Obsidian FAIL SSIM
+  (0.99185). The residual is the blur kernel on high-frequency detail.
 - Motion: PASS for the measured coverflow/stack runs.
-- Emulator performance: FAIL (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms).
+- Emulator performance: FAIL (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
+  these numbers predate the final material changes and the V2528A device run.
 
 Keep `MaineGlassCard` as the only adapter seam. Do not call `GlassSurface` from page code and
 do not add the effects modules to the app dependency graph yet.

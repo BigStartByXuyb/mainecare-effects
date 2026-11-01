@@ -16,7 +16,7 @@
     position: relative;
     width: 390px;
     height: 844px;
-    background-image: url("backdrop.png");
+    background-image: url("backdrop-gate.png");
     background-size: cover;
     background-position: center;
   }
@@ -66,13 +66,13 @@
     opacity: 0.85;
   }
   .card .warp {
-    background-image: url("backdrop.png");
+    background-image: url("backdrop-gate.png");
     background-size: 390px 866.6667px;
     background-position: -24px -131.35px;
     filter: blur(34px) saturate(132%) brightness(0.82);
   }
   .pill .warp {
-    background-image: url("backdrop.png");
+    background-image: url("backdrop-gate.png");
     background-size: 390px 866.6667px;
     background-position: -24px -361.35px;
     filter: blur(24px) saturate(138%) brightness(0.88);
@@ -85,11 +85,29 @@
   }
   body.no-before .card::before { display: none; }
   body.no-shadow .card, body.no-shadow .pill { box-shadow: none; }
+  body.no-sheen .card .tint, body.no-sheen .pill .tint { background-image: none; }
+  body.no-border .card, body.no-border .pill { border-color: transparent; }
+  body.warp-only .card, body.warp-only .pill {
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+  }
+  body.warp-only .tint, body.warp-only .card::before { display: none; }
+  body.only-a1 .card .tint { background-image: radial-gradient(280px circle at 72% 8%, rgba(240,245,249,0.10), transparent 60%); }
+  body.only-a2 .card .tint { background-image: radial-gradient(92% 74% at 108% -8%, rgba(205,215,224,0.075), transparent 46%); }
+  body.only-a3 .card .tint { background-image: linear-gradient(116deg, transparent 8%, rgba(255,255,255,0.052) 18%, transparent 30%); }
+  body.only-a4 .card .tint { background-image: linear-gradient(325deg, rgba(0,0,0,0.30), transparent 48%); }
+  body.only-a5 .card .tint { background-image: linear-gradient(180deg, rgba(34,38,43,0.24), rgba(3,4,6,0.54)); }
   body.raw .tint { display: none; }
   body.raw .card::before { display: none; }
   body.raw .card { box-shadow: none; border-color: transparent; background-color: transparent; }
   body.raw .pill { display: none; }
   body.raw .card .warp { filter: blur(34px); }
+  body.photo #stage { background-image: url("backdrop.png"); }
+  body.photo .card .warp, body.photo .pill .warp { background-image: url("backdrop.png"); }
+  body.obsidian #stage { background-image: url("backdrop-obsidian.png"); }
+  body.obsidian .card .warp { background-image: url("backdrop-obsidian.png"); }
+  body.obsidian .pill .warp { background-image: url("backdrop-obsidian.png"); }
   .card .tint {
     background-color: rgba(10, 12, 15, 0.56);
     background-image:
@@ -184,8 +202,27 @@
   if (params.get("shadow") === "0") {
     document.body.classList.add("no-shadow");
   }
+  if (params.get("sheen") === "0") {
+    document.body.classList.add("no-sheen");
+  }
+  if (params.get("border") === "0") {
+    document.body.classList.add("no-border");
+  }
+  if (params.get("warp") === "1") {
+    document.body.classList.add("warp-only");
+  }
+  const only = params.get("only");
+  if (only) {
+    document.body.classList.add(`only-${only}`);
+  }
   if (params.get("raw") === "1") {
     document.body.classList.add("raw");
+  }
+  if (params.get("bg") === "obsidian") {
+    document.body.classList.add("obsidian");
+  }
+  if (params.get("bg") === "photo") {
+    document.body.classList.add("photo");
   }
 </script>
 </body>

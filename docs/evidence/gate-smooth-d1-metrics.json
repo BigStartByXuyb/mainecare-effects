@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/final-smooth-d1-crop.png",
+  "right": "verification/results/ws-current-d1.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 0.42842390333558966,
+  "rmse": 1.1052879590565161,
+  "psnr": 47.26129483129505,
+  "ssim": 0.9955646080399948,
+  "maxChannelDiff": 47,
+  "percentOver2": 4.140563303813177,
+  "percentOver5": 0.42345618513086647,
+  "percentOver10": 0.08381867666967509,
+  "percentOver20": 0.02723445961191336
+}

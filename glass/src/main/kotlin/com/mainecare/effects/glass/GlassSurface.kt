@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import kotlin.math.floor
 
 @Composable
 fun GlassSurface(
@@ -231,6 +232,8 @@ private fun bindShader(
     shader.setFloatUniform("uProcedural", if (params.mode == GlassMode.Shader) 1f else 0f)
     shader.setFloatUniform("uBeforeLayer", if (material.beforeLayer) 1f else 0f)
     shader.setFloatUniform("uBeforeStrength", material.beforeStrength)
+    shader.setFloatUniform("uDensity", density)
+    shader.setFloatUniform("uBlurSigma", material.blurRadiusDp * density)
     shader.setFloatUniform("uAfterGlow", if (material.afterGlow) 1f else 0f)
     shader.setFloatUniform("uDebug", debugOutput)
     shader.setFloatUniform("uSheenTopCenter", material.sheenTopCenter.x, material.sheenTopCenter.y)
@@ -239,8 +242,18 @@ private fun bindShader(
     setColorUniform(shader, "uSheenTopRight", material.sheenTopRight)
     setColorUniform(shader, "uSheenBottom", material.sheenBottom)
     setColorUniform(shader, "uSheenDiagonal", material.sheenDiagonal)
+    shader.setFloatUniform("uSheenDiagonalAngle", material.sheenDiagonalAngle)
+    shader.setFloatUniform("uSheenDiagonalStart", material.sheenDiagonalStart)
+    shader.setFloatUniform("uSheenDiagonalPeak", material.sheenDiagonalPeak)
+    shader.setFloatUniform("uSheenDiagonalEnd", material.sheenDiagonalEnd)
+    setColorUniform(shader, "uSheenDiagonal2", material.sheenDiagonal2)
+    shader.setFloatUniform("uSheenDiagonal2Start", material.sheenDiagonal2Start)
+    shader.setFloatUniform("uSheenDiagonal2Peak", material.sheenDiagonal2Peak)
+    shader.setFloatUniform("uSheenDiagonal2End", material.sheenDiagonal2End)
     setColorUniform(shader, "uSheenDark", material.sheenDark)
     setColorUniform(shader, "uSheenVerticalTop", material.sheenVerticalTop)
+    setColorUniform(shader, "uSheenVerticalMid", material.sheenVerticalMid)
+    shader.setFloatUniform("uSheenVerticalMidPos", material.sheenVerticalMidPos)
     setColorUniform(shader, "uSheenVerticalBottom", material.sheenVerticalBottom)
     shader.setInputBuffer("uMap", mapShader)
     shader.setInputBuffer("uBackdrop", backdropShader)
@@ -252,20 +265,36 @@ private fun setColorUniform(shader: RuntimeShader, name: String, color: Color) {
 }
 
 private fun DrawScope.drawInnerShadow(material: GlassMaterial, size: Size) {
-    val depth = minOf(
-        material.innerShadowDepthDp.dp.toPx(),
-        size.height * 0.38f,
-    )
-    if (depth <= 0f || size.width <= 0f) return
+    if (material.bottomInnerShadowColor.alpha <= 0f || size.width <= 0f) return
+    // CSS inset box-shadow: the shadow edge is offset from the bottom, then blurred.
+    // Chrome's blur covers the whole short v21 pill, so model the full Gaussian tail.
+    val sigma = (material.innerShadowDepthDp * 0.5f).dp.toPx().coerceAtLeast(0.5f)
+    val edge = size.height + material.innerShadowOffsetYDp.dp.toPx()
+    val steps = 32
+    val colors = ArrayList<Color>(steps + 1)
+    for (i in 0..steps) {
+        val y = size.height * i / steps
+        val alpha = material.bottomInnerShadowColor.alpha * gaussianCdf((y - edge) / sigma)
+        colors += material.bottomInnerShadowColor.copy(alpha = alpha)
+    }
     drawRect(
         brush = Brush.verticalGradient(
-            colors = listOf(Color.Transparent, material.bottomInnerShadowColor),
-            startY = size.height - depth,
+            colors = colors,
+            startY = 0f,
             endY = size.height,
         ),
-        topLeft = Offset(0f, size.height - depth),
-        size = Size(size.width, depth),
+        topLeft = Offset(0f, 0f),
+        size = size,
     )
+}
+
+private fun gaussianCdf(z: Float): Float {
+    val x = z.toDouble()
+    val t = 1.0 / (1.0 + 0.3275911 * kotlin.math.abs(x))
+    val poly = (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t -
+        0.284496736) * t + 0.254829592) * t
+    val erf = (1.0 - poly * kotlin.math.exp(-x * x)) * if (x < 0) -1.0 else 1.0
+    return (0.5 * (1.0 + erf)).toFloat()
 }
 
 private fun DrawScope.drawBorderAndHighlights(
@@ -274,16 +303,25 @@ private fun DrawScope.drawBorderAndHighlights(
     size: Size,
 ) {
     if (size.width <= 1f || size.height <= 1f) return
-    val stroke = 1.dp.toPx()
+    // Chrome snaps a 1 CSS px border to whole device pixels at fractional DPR.
+    val stroke = floor(1.dp.toPx()).coerceAtLeast(1f)
+    val highlightWidth = 1.dp.toPx()
+    val highlightCenter = stroke + highlightWidth / 2f
     val inset = (cornerRadiusPx * 0.55f)
         .coerceAtMost(size.width / 2f - 1f)
         .coerceAtLeast(0f)
     if (inset < size.width / 2f) {
         drawLine(
             color = material.topHighlightColor,
-            start = Offset(inset, stroke * 1.5f),
-            end = Offset(size.width - inset, stroke * 1.5f),
-            strokeWidth = stroke,
+            start = Offset(inset, highlightCenter),
+            end = Offset(size.width - inset, highlightCenter),
+            strokeWidth = highlightWidth,
+        )
+        drawLine(
+            color = material.topHighlightColor.copy(alpha = material.topHighlightColor.alpha * 0.14f),
+            start = Offset(highlightCenter, inset),
+            end = Offset(highlightCenter, size.height - inset),
+            strokeWidth = highlightWidth,
         )
     }
     if (material.goldTopEdge) {

@@ -54,6 +54,7 @@ class GlassBackdropState(
     val image: ImageBitmap,
     val contentScale: ContentScale = ContentScale.Crop,
     private val graphicsLayer: GraphicsLayer,
+    private val blurSigmaScale: Float = 1.4f,
 ) {
     private var boundsState by mutableStateOf(Rect.Zero)
 
@@ -79,8 +80,8 @@ class GlassBackdropState(
 
     /**
      * GPU path through the same Skia blur Chromium uses. The backdrop is first rendered at
-     * screen geometry (ContentScale applied), then blurred, then halved for the cache; the
-     * shader mapping uses this screen-space bitmap directly.
+     * screen geometry (ContentScale applied), then blurred at up to 2160px; the shader
+     * mapping uses this screen-space bitmap directly.
      */
     private suspend fun gpuBlur(radiusPx: Float): ImageBitmap = withContext(Dispatchers.Main) {
         val layer = graphicsLayer
@@ -115,7 +116,7 @@ class GlassBackdropState(
                 dstSize = IntSize(dstWidth.roundToInt(), dstHeight.roundToInt()),
             )
         }
-        val sigma = radiusPx * scale * BLUR_SIGMA_CALIBRATION
+        val sigma = radiusPx * scale * blurSigmaScale
         layer.renderEffect = BlurEffect(sigma, sigma, TileMode.Clamp)
         val output = layer.toImageBitmap()
         layer.renderEffect = null
@@ -135,8 +136,7 @@ class GlassBackdropState(
     }
 
     private companion object {
-        const val GLASS_BLUR_MAX_DIMENSION = 540f
-        const val BLUR_SIGMA_CALIBRATION = 1.4f
+        const val GLASS_BLUR_MAX_DIMENSION = 2160f
     }
 }
 
@@ -144,10 +144,11 @@ class GlassBackdropState(
 fun rememberGlassBackdrop(
     image: ImageBitmap,
     contentScale: ContentScale = ContentScale.Crop,
+    blurSigmaScale: Float = 1.4f,
 ): GlassBackdropState {
     val graphicsLayer = rememberGraphicsLayer()
-    return remember(image, contentScale, graphicsLayer) {
-        GlassBackdropState(image, contentScale, graphicsLayer)
+    return remember(image, contentScale, graphicsLayer, blurSigmaScale) {
+        GlassBackdropState(image, contentScale, graphicsLayer, blurSigmaScale)
     }
 }
 
@@ -160,9 +161,10 @@ fun GlassBackdrop(
     image: ImageBitmap,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
+    blurSigmaScale: Float = 1.4f,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val state = rememberGlassBackdrop(image, contentScale)
+    val state = rememberGlassBackdrop(image, contentScale, blurSigmaScale)
     CompositionLocalProvider(LocalGlassBackdrop provides state) {
         Box(
             modifier = modifier

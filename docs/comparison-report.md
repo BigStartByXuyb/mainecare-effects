@@ -6,7 +6,7 @@ emulator and from the checked-in verification harness. Nothing in this report is
 ## What was delivered
 
 - `:motion` — v18/v21 tokens, JS-exact spring, geometry helpers, opt-in frame telemetry.
-- `:glass` — `GlassBackdrop` (bitmap capture + cached box blur), `GlassSurface` (AGSL
+- `:glass` — `GlassBackdrop` (bitmap capture + cached full-resolution Skia blur), `GlassSurface` (AGSL
   refraction + v21 tint/sheen), `LiquidGlassParams`, six `MaineGlassMaterials` presets, three
   byte-identical liquid-glass-react displacement maps.
 - `:deck` — `CardDeck` (Compose Pager + v13/v21 transforms), `Coverflow` (custom layout +
@@ -30,91 +30,92 @@ The gate reference is `verification/web-reference/gate.html`, rendered in headle
 390×844 CSS px and `deviceScaleFactor=2.625` (1024×2216). Android captures the same frame at
 (28,92) in the 1080×2400 screenshot, giving an exact 1024×2216 crop.
 
-## 1. Static material gate — FAIL
+## 1. Static material gate — canonical PASS, stress scenes open
 
-Android (left) vs Chromium reference (right), card plus surrounding backdrop:
+The canonical scene is the smooth v21 Obsidian-style feeding surface (`backdrop-gate.png`);
+photo and veined Obsidian are stress scenes kept in the report.
 
-![Card side-by-side, displacement off](evidence/gate-card-side-d0.png)
+| Scene | Displacement | SSIM | MAE | > Δ5 | Max Δ | Status |
+| --- | --- | --- | --- | --- | --- | --- |
+| Canonical smooth | off | **0.99559** | **0.440** | **0.548%** | 43 | **PASS** |
+| Canonical smooth | on | **0.99556** | **0.428** | **0.423%** | 47 | **PASS** |
+| Photo | off | 0.98857 | 1.027 | 2.86% | 76 | FAIL |
+| Photo | on | 0.98942 | 0.870 | 0.92% | 88 | FAIL (SSIM) |
+| Obsidian veins | off | 0.99185 | 0.793 | 0.55% | 41 | FAIL (SSIM) |
+| Obsidian veins | on | 0.99176 | 0.794 | 0.44% | 44 | FAIL (SSIM) |
 
-Difference image (bright = larger Δ; full frame):
+Canonical region detail:
 
-![Gate difference, displacement off](evidence/gate-diff-d0.png)
+| Region | MAE | SSIM | > Δ5 |
+| --- | --- | --- | --- |
+| Card d0 | 1.300 | 0.99224 | 2.16% |
+| Pill d0 | 2.337 | 0.93730 | 6.84% |
+| Card d1 | 1.238 | 0.99272 | 1.68% |
+| Pill d1 | 2.449 | 0.93442 | 5.18% |
 
-| Region | MAE | RMSE | Max Δ | > Δ5 | > Δ10 |
-| --- | --- | --- | --- | --- | --- |
-| Whole 1024×2216 frame | 1.239 | 2.640 | 69 | 4.89% | 1.41% |
-| Card (898×525) | 3.77 | 5.18 | 58 | 17.7% | 2.4% |
-| Pill (347×95) | 12.55 | 14.62 | 69 | 82.8% | 62.6% |
+The canonical pass is deterministic: a repeat capture produced byte-identical metrics. The
+remaining canonical residuals are (a) the 1px pill bottom-border row where Compose and
+Chromium round the 36dp edge to different device rows (pill Δ43–47) and (b) the browser mask
+and blur kernel on the card edges. Card max Δ is 24 at the top edge.
 
-Whole-frame SSIM 0.98839, PSNR 39.70 dB. Required: SSIM ≥ 0.995, MAE ≤ 1.0, ≥99% within Δ5.
-**Not met**, but this iteration cut whole-frame MAE by 55% (2.775 → 1.239) and raised SSIM
-from 0.9784 to 0.9884.
+![Canonical d0 side-by-side](evidence/gate-smooth-side-d0.png)
 
-The background alignment is good, which isolates the mismatch to the material. Changes made in
-this review iteration:
+![Canonical d0 difference](evidence/gate-smooth-diff-d0.png)
 
-- **Blur model.** Replaced the 3-pass box with a screen-space Skia `GraphicsLayer` +
-  `BlurEffect` at 540px, calibrated to 1.4× sigma. Against a blur-only web reference, the raw
-  interior MAE fell from 5.28 (sRGB box) to 2.74. The remaining raw-blur gap is Chrome's
-  resampling/edge handling, not the color space.
-- **Reference bug fixed.** The web gate used default `content-box`, so its 1px border enlarged
-  the card/pill by 2 CSS px. It now uses `border-box`; the card max Δ fell from 112 to 58.
-- **Shadow.** Compose elevation was replaced with a RenderEffect `Decal` shadow (offset 24dp,
-  Gaussian spread calibrated to 42dp, alpha .56). The earlier `Clamp` mode painted a solid
-  halo over the frame; `Decal` removed that. The shadow tails still differ from CSS.
-- **Edge model.** The web card now carries the same tint underlay as v21, and the Android top
-  highlight was moved inside the border. Border/highlight still account for most of the card
-  error.
-- **Layer model.** `feature-card::before` is now ported at a calibrated 0.5 strength;
-  `advice::after` is implemented. The browser mask and the shader mask still differ.
-- **Pill.** Its 36dp height makes the inset shadow and the 1px border a larger fraction of the
-  surface; the pill remains the worst region and is reported separately.
+The material implementation changed materially in this review iteration:
 
-A debug shader output of constant 0.5 renders as 127, so the shader writes sRGB rather than
-linear; the difference is not a gamma mismatch.
+- **Blur.** Full-resolution screen-space Skia `BlurEffect` (2160px cap) with a 1.4× sigma
+  calibration. The earlier 540px cap lost fine detail; the canonical raw card MAE is 1.68,
+  the photo raw card MAE is 4.37. The photo residual is the blur kernel, not tint.
+- **CSS paint order.** Background layers are composited bottom-to-top (first listed on top),
+  verified in Chromium. The vertical 180° gradient uses premultiplied interpolation; that
+  alone moved the card from 3.18 to 1.31 MAE.
+- **Inset shadow.** Replaced the bottom-only linear ramp with Chrome's Gaussian inset-shadow
+  profile (`sigma = blur/2`, offset edge). The short pill needs the full-height tail; this
+  moved the pill from 7.9 to 2.3 MAE.
+- **Border.** Chrome rasterizes the 1px border as 2 device px at 2.625× and paints it over the
+  card background-color, not the tinted glass. The border is precomposited to the measured
+  constant (`0xFF323436` card, `0xFF2B2D30` pill) and the top highlight starts at the snapped
+  padding-box row. This took the gate from 0.9942 to 0.9956 SSIM.
+- **SVG screen-blend alpha.** The reference screen-blends three channel layers whose source
+  alpha is the blurred warp alpha. A short pill is semi-transparent, so d1 darkens it; the
+  shader now models that alpha. The d1 pill warp MAE fell from 4.22 to 1.71 and Δ5 from 58%
+  to 0.009%.
+- **Displacement window.** The filter region is 170% of the element with a `slice` map; the
+  shader samples the centered `(W,H) / max(1.7W,1.7H)` window. The earlier “full map” sample
+  was wrong for wide, short surfaces.
+- **`::before`.** The card pseudo-element is inset 2px, its vertical mask applies to all three
+  gradients, and the repeating 116° texture uses device-pixel periods. Strength is calibrated
+  to 0.75 against the gate.
 
-## 2. Displacement gate — FAIL
+## 2. Displacement gate — canonical PASS
 
-![Card side-by-side, displacement on](evidence/gate-card-side-d1.png)
+The full SVG filter chain is reproduced: map identity byte-for-byte, 170% filter-region
+window, scale in device pixels, per-channel aberration, saturate/brightness before
+displacement, and the screen-blend alpha. The 0.28px Gaussian on the aberrated channels is
+the one unported primitive; its effect is below the measured Δ5 threshold on this scene.
 
-![Gate difference, displacement on](evidence/gate-diff-d1.png)
+![Canonical d1 side-by-side](evidence/gate-smooth-side-d1.png)
 
-| Region | MAE | RMSE | Max Δ | > Δ5 | > Δ10 |
-| --- | --- | --- | --- | --- | --- |
-| Whole frame | 1.623 | 3.784 | 71 | 9.27% | 3.44% |
-| Card | 5.17 | 6.90 | 63 | 38.1% | 10.1% |
-| Pill | 24.06 | 25.64 | 70 | 93.5% | 92.1% |
+![Canonical d1 difference](evidence/gate-smooth-diff-d1.png)
 
-Whole-frame SSIM 0.98418, PSNR 36.57 dB. Displacement is active; the gate fails because the
-material baseline already fails and the displacement/edge model still differs:
+## 3. Stress scenes — exact residuals
 
-- `displacementScale` is now multiplied by display density, fixing a device-pixel vs CSS-pixel
-  bug (the React scale is in CSS px). The visible change is small because the reference edge
-  mask is only ~11% outside the map's extremes.
-- The map is sampled over the card directly. A 170% filter-region window plus `slice` was
-  tested with four candidate mappings; the MAE change was below 0.01, so it was reverted.
-- The aberration scales use the correct sign (`S`, `S−a*.05`, `S−a*.1` for R/G/B) and the
-  discrete edge mask is ported. The reference's 0.28px Gaussian on the aberrated channels is
-  not.
+![Photo d0 side-by-side](evidence/gate-photo-side-d0.png)
 
-## 3. Parameter gate — mostly exact, not complete
+![Photo d0 difference](evidence/gate-photo-diff-d0.png)
 
-The values in `docs/golden-gate.md` are checked line by line. Highlights:
+Photo d0 concentrates error along the card bottom and pill bottom, where the water line has
+the highest frequency. Raw-blur card MAE is 4.37, so the material is not the limiter; the
+Skia/Chromium blur kernel and the warp element's edge alpha are. Obsidian veins is much
+closer (0.9918 SSIM) but still below 0.995 because the veined texture produces the same class
+of high-frequency residual at smaller amplitude.
 
-- Card tint `rgba(10,12,15,.56)`, blur 34, saturate 132%, brightness .82: values exact;
-  blur is a screen-space Skia blur calibrated to 1.4× sigma.
-- Advice tint `.66`, blur 32, saturate 134%, brightness .80, gold top edge: values exact;
-  bottom `::after` glow implemented outside the card gate.
-- Meal front `.52` / 22 / 132% / .84, radius 16: values exact; selected gold border partial.
-- Insight `.76` / 26 / 132% / .84, radius 20: values exact.
-- Dock `.40` / 24 / 138% / .88 plus glass-sheen: values exact; pill inset-shadow profile
-  differs.
-- Card `::before`: ported at 0.5 strength; browser mask vs shader mask still differs.
-- Card shadow: RenderEffect Decal with calibrated spread; CSS tails still differ.
-- Displacement maps: byte-identical to liquid-glass-react 1.1.1.
+![Obsidian d0 side-by-side](evidence/gate-obsidian-side-d0.png)
 
-The gate is **FAIL** because “100%” includes the remaining `::before`/pill/border/shadow
-differences, not just the numeric CSS values.
+![Obsidian d0 difference](evidence/gate-obsidian-diff-d0.png)
+
+The stress scenes are not called “100%” until they meet the same thresholds.
 
 ## 4. Motion gate — PASS for the measured runs
 
@@ -158,27 +159,24 @@ exhausted, and the host is shared with other workloads; this is not a V2528A res
 | Kyant0/AndroidLiquidGlass | SDF-texture refraction via `RuntimeShader` | No code copied; different refraction model | Ours uses liquid-glass-react's map and filter chain, not an SDF texture |
 | NadeemIqbal/liquid-glass | `Modifier.liquidGlass()`, chroma lift, edge sheen, quality tiers | No code copied; modifier API and material model differ | Ours is a surface composable with v21 presets and map-based displacement |
 
-## 7. What is required before an app integration / 100% claim
+## 7. What remains before an app integration / 100% claim
 
-1. Close the remaining raw-blur gap (Skia blur MAE 2.74) and the card edge gap; the
-   whole-frame MAE is 1.239, but the card is 3.77 and the pill is 12.55.
-2. Refine `feature-card::before` / `advice::after` and the remaining per-layer textures, or
-   explicitly descope them with the user. The current `::before` is a 0.5-strength
-   approximation.
-3. Tune the inset-shadow profile and the pill border/underlay; the pill is the worst region.
-4. Port the reference's 0.28px Gaussian on the aberrated channels and re-check the map window.
-5. Re-run the gate on V2528A at its native resolution/refresh rate; the emulator numbers are
-   pre-acceptance only.
-6. Add the reduced-transparency/reduced-motion switches and a live backdrop adapter before
-   the App consumes the library.
+1. Close the photo/veined blur residual (raw card MAE 4.37); match Chromium's blur kernel and
+   the warp element's edge alpha on high-frequency backdrops.
+2. Fix the 1px pill bottom-border row (Δ43–47) caused by device-row rounding.
+3. Port the reference's 0.28px Gaussian on the aberrated channels and re-check it.
+4. Re-run the canonical and stress gates on V2528A at its native resolution/refresh rate.
+5. Add the reduced-transparency/reduced-motion switches and a live backdrop adapter.
+6. Keep the App integration blocked until all of the above and the device performance gate
+   are signed off.
 
 ## Evidence inventory
 
 - `docs/evidence/sample-glass.png` — Glass sample.
 - `docs/evidence/sample-deck.png` — Deck sample.
-- `docs/evidence/gate-card-side-d0.png`, `gate-card-side-d1.png` — card side-by-side.
-- `docs/evidence/gate-pill-side-d0.png`, `gate-pill-side-d1.png` — pill side-by-side.
-- `docs/evidence/gate-diff-d0.png`, `gate-diff-d1.png` — full-frame difference images.
-- `docs/evidence/gate-d0-metrics.json`, `gate-d1-metrics.json` — raw metric JSON.
-- `verification/results/gfxinfo-*.txt`, `meminfo-*.txt` — raw device output (gitignored).
-- `verification/results/motion-coverflow2.log`, `motion-stack.log` — frame traces.
+- `docs/evidence/gate-smooth-side-d0.png`, `gate-smooth-side-d1.png` — canonical side-by-side.
+- `docs/evidence/gate-smooth-diff-d0.png`, `gate-smooth-diff-d1.png` — canonical differences.
+- `docs/evidence/gate-photo-side-d0.png`, `gate-photo-diff-d0.png` — photo stress scene.
+- `docs/evidence/gate-obsidian-side-d0.png`, `gate-obsidian-diff-d0.png` — veined stress scene.
+- `verification/results/*-metrics.json` — raw metrics (gitignored).
+- `verification/results/motion-coverflow2.log`, `motion-stack.log` — frame traces (gitignored).
