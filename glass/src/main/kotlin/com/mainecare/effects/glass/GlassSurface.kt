@@ -61,6 +61,7 @@ fun GlassSurface(
     val context = LocalContext.current
     val density = LocalDensity.current
     val shape = remember(params.cornerRadius) { RoundedCornerShape(params.cornerRadius) }
+    val debugNoOverlays = debugOutput > 0.5f
     var surfaceBounds by remember { mutableStateOf(Rect.Zero) }
     var surfaceSize by remember { mutableStateOf(Size.Zero) }
     var pointer by remember { mutableStateOf(Offset(0.72f, 0.08f)) }
@@ -85,6 +86,11 @@ fun GlassSurface(
     val backdropBitmap = blurred?.asAndroidBitmap()
     val backdropShader = remember(backdropBitmap) {
         backdropBitmap?.let { BitmapShader(it, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP) }
+    }
+    val sceneShader = remember(backdrop?.image) {
+        backdrop?.image?.let {
+            BitmapShader(it.asAndroidBitmap(), Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        }
     }
 
     val interaction = if (interactive && backdrop != null) {
@@ -142,6 +148,7 @@ fun GlassSurface(
                             backdrop = backdrop!!,
                             backdropBitmap = backdropBitmap!!,
                             backdropShader = backdropShader!!,
+                            sceneShader = sceneShader!!,
                             mapBitmap = mapBitmap,
                             mapShader = mapShader,
                             surfaceBounds = surfaceBounds,
@@ -158,11 +165,13 @@ fun GlassSurface(
                     } else {
                         drawRect(material.tint)
                     }
-                    drawInnerShadow(material, size)
+                    if (!debugNoOverlays) drawInnerShadow(material, size)
                 }
                 .drawWithContent {
                     drawContent()
-                    drawBorderAndHighlights(material, params.cornerRadius.toPx(), size)
+                    if (!debugNoOverlays) {
+                        drawBorderAndHighlights(material, params.cornerRadius.toPx(), size)
+                    }
                 }
                 .then(interaction),
             contentAlignment = contentAlignment,
@@ -193,6 +202,7 @@ private fun bindShader(
     backdrop: GlassBackdropState,
     backdropBitmap: Bitmap,
     backdropShader: BitmapShader,
+    sceneShader: BitmapShader,
     mapBitmap: Bitmap,
     mapShader: BitmapShader,
     surfaceBounds: Rect,
@@ -207,13 +217,32 @@ private fun bindShader(
     val factorX = backdropBitmap.width / bounds.width
     val factorY = backdropBitmap.height / bounds.height
 
+    val inset = density
     shader.setFloatUniform("uSize", surfaceSize.width, surfaceSize.height)
+    shader.setFloatUniform("uInset", inset)
+    shader.setFloatUniform(
+        "uWarpSize",
+        (surfaceSize.width - 2f * inset).coerceAtLeast(1f),
+        (surfaceSize.height - 2f * inset).coerceAtLeast(1f),
+    )
     shader.setFloatUniform(
         "uBackdropOrigin",
-        (surfaceBounds.left - bounds.left) * factorX,
-        (surfaceBounds.top - bounds.top) * factorY,
+        (surfaceBounds.left + inset - bounds.left) * factorX,
+        (surfaceBounds.top + inset - bounds.top) * factorY,
     )
     shader.setFloatUniform("uBackdropScale", factorX, factorY)
+    val fit = backdrop.contentScale.computeScaleFactor(
+        Size(backdrop.image.width.toFloat(), backdrop.image.height.toFloat()),
+        Size(bounds.width, bounds.height),
+    )
+    val drawnWidth = backdrop.image.width * fit.scaleX
+    val drawnHeight = backdrop.image.height * fit.scaleY
+    shader.setFloatUniform(
+        "uSceneOrigin",
+        (surfaceBounds.left + inset - bounds.left - (bounds.width - drawnWidth) / 2f) / fit.scaleX,
+        (surfaceBounds.top + inset - bounds.top - (bounds.height - drawnHeight) / 2f) / fit.scaleY,
+    )
+    shader.setFloatUniform("uSceneScale", 1f / fit.scaleX, 1f / fit.scaleY)
     shader.setFloatUniform("uMapSize", mapBitmap.width.toFloat())
     shader.setFloatUniform("uDisplacement", params.signedDisplacementScale * density)
     shader.setFloatUniform("uAberration", params.aberrationIntensity)
@@ -234,6 +263,10 @@ private fun bindShader(
     shader.setFloatUniform("uBeforeStrength", material.beforeStrength)
     shader.setFloatUniform("uDensity", density)
     shader.setFloatUniform("uBlurSigma", material.blurRadiusDp * density)
+    shader.setFloatUniform("uUnderlayAlpha", material.backgroundUnderlayAlpha)
+    setColorUniform(shader, "uBorderColor", material.borderColor)
+    shader.setFloatUniform("uBorderWidth", floor(density).coerceAtLeast(1f))
+    shader.setFloatUniform("uCornerRadius", params.cornerRadius.value * density)
     shader.setFloatUniform("uAfterGlow", if (material.afterGlow) 1f else 0f)
     shader.setFloatUniform("uDebug", debugOutput)
     shader.setFloatUniform("uSheenTopCenter", material.sheenTopCenter.x, material.sheenTopCenter.y)
@@ -257,6 +290,7 @@ private fun bindShader(
     setColorUniform(shader, "uSheenVerticalBottom", material.sheenVerticalBottom)
     shader.setInputBuffer("uMap", mapShader)
     shader.setInputBuffer("uBackdrop", backdropShader)
+    shader.setInputBuffer("uScene", sceneShader)
     paint.shader = shader
 }
 
@@ -341,11 +375,4 @@ private fun DrawScope.drawBorderAndHighlights(
             )
         }
     }
-    drawRoundRect(
-        color = material.borderColor,
-        topLeft = Offset(stroke / 2f, stroke / 2f),
-        size = Size(size.width - stroke, size.height - stroke),
-        cornerRadius = CornerRadius((cornerRadiusPx - stroke / 2f).coerceAtLeast(0f)),
-        style = Stroke(width = stroke),
-    )
 }

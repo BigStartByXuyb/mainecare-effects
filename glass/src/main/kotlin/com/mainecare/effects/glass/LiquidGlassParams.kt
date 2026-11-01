@@ -61,6 +61,7 @@ data class GlassMaterial(
     val saturation: Float,
     val brightness: Float,
     val borderColor: Color,
+    val backgroundUnderlayAlpha: Float = 0f,
     val topHighlightColor: Color,
     val bottomInnerShadowColor: Color,
     val innerShadowDepthDp: Float,

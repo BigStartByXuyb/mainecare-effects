@@ -103,9 +103,10 @@ telemetry sink used by the demo to record `deck.progress`, `coverflow.center` an
    the Compose shape.
 5. **Compose edges.** A RenderEffect `Decal` shadow sits behind the card (offset/blur/alpha
    per material); border, top highlight, gold top line and the Gaussian inner shadow are
-   drawn by Compose after the shader, so they stay crisp and are not displaced. Chrome
-   snaps a 1 CSS px border to whole device pixels and paints it over the card
-   background-color; the preset border colors are precomposited to that measured raster.
+   drawn by Compose after the shader, so they stay crisp and are not displaced. The border is
+   a 2px rounded-box SDF in the shader over the unblurred stage, so it follows the local
+   backdrop brightness; the top/left/right edges match the web raster, the bottom edge is a
+   reported residual.
 
 The blur is precomputed into the bitmap, so the shader is a single pass with map + backdrop
 lookups. `interactive=true` tracks a pointer without consuming the gesture; the pointer shifts
@@ -133,11 +134,11 @@ the sheen by `elasticity * 0.1` in UV space.
 3. **Missing / approximate v21 layers.** `feature-card::before` is ported with the inset
    2px geometry, all-gradient vertical mask and a gate-calibrated 0.75 strength;
    `advice::after` is implemented. The browser mask and shader phase still differ slightly.
-4. **Blur kernel on fine detail.** The canonical smooth gate passes, but the photo stress
-   gate still fails SSIM because Skia's blur kernel and Chromium's blur of the warp element
-   (including element-edge alpha) differ on high-frequency detail. The inset shadow now uses
-   the Gaussian profile and the card shadow uses a Decal blur; shadow tails remain a
-   reported difference.
+4. **Shared stage shadows.** CSS paints the card’s outer shadow on the shared stage before
+   the pill is composited. Android draws each surface’s shadow inside its own box, so a sibling
+   shadow cannot reach another surface’s stage sample. This is the dominant photo/veined-pill
+   residual; fixing it needs a live backdrop that captures rendered surface shadows (phase 2).
+   The inset shadow uses the Gaussian profile; the card shadow uses a Decal blur.
 5. **Reduced transparency / reduced motion.** Not exposed yet. The app adapter must be able to
    disable the shader (tint-only fallback) and zero animations; this is an API requirement for
    phase 2.

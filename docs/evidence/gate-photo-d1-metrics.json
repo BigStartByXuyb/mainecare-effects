@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/ab5-photo-d1-crop.png",
+  "right": "verification/results/ws-current-photo-d1.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 0.7709690649443441,
+  "rmse": 1.5067701271777438,
+  "psnr": 44.569863580476444,
+  "ssim": 0.9932575639096933,
+  "maxChannelDiff": 87,
+  "percentOver2": 4.67383870148917,
+  "percentOver5": 0.5197463052797834,
+  "percentOver10": 0.13476209950361012,
+  "percentOver20": 0.04384836134927798
+}

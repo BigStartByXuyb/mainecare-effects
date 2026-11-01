@@ -28,16 +28,17 @@ inner shadows.
 
 | Metric | Threshold | Final |
 | --- | --- | --- |
-| SSIM (windowed 8×8, luminance) | ≥ 0.995 | **0.99559** |
-| Mean absolute RGB error | ≤ 1.0 / 255 | **0.440** |
-| Pixels with max channel Δ ≤ 5 | ≥ 99% | **99.452%** (0.548% above Δ5) |
+| SSIM (windowed 8×8, luminance) | ≥ 0.995 | **0.99536** |
+| Mean absolute RGB error | ≤ 1.0 / 255 | **0.428** |
+| Pixels with max channel Δ ≤ 5 | ≥ 99% | **99.571%** (0.429% above Δ5) |
 | Frame bounds | exactly 1024×2216 at (28,92) | exact |
 
 Status: **PASS**.
 
-- Whole frame: MAE 0.440, RMSE 1.48, PSNR 42.5 dB, max Δ43.
-- Card (898×525): MAE 1.300, SSIM 0.99224, 2.16% above Δ5.
-- Pill (347×95): MAE 2.337, SSIM 0.93730, 6.84% above Δ5.
+- Whole frame: MAE 0.428, PSNR 42.8 dB.
+- Card (898×525): MAE 1.185, SSIM 0.99184, 1.22% above Δ5.
+- Pill (347×95): MAE 3.180, SSIM 0.92953, 12.08% above Δ5. The adaptive border raises the
+  pill’s MAE versus the previous constant border, but the whole-frame SSIM still passes.
 - A second capture produced byte-identical metrics, so the result is deterministic.
 
 The card-relative max Δ is 24, at the upper edge of the allowed “≤24 in card/pill” check.
@@ -53,15 +54,15 @@ Chromium reference runs the full liquid-glass-react 1.1.1 SVG filter chain.
 
 | Metric | Threshold | Final |
 | --- | --- | --- |
-| SSIM | ≥ 0.99 | **0.99556** |
-| MAE | ≤ 1.5 / 255 | **0.428** |
-| Pixels within Δ5 | ≥ 98% | **99.576%** (0.423% above Δ5) |
+| SSIM | ≥ 0.99 | **0.99531** |
+| MAE | ≤ 1.5 / 255 | **0.422** |
+| Pixels within Δ5 | ≥ 98% | **99.645%** (0.355% above Δ5) |
 
 Status: **PASS**.
 
-- Whole frame: RMSE 1.46, PSNR 42.7 dB, max Δ47.
-- Card: MAE 1.238, SSIM 0.99272, 1.68% above Δ5.
-- Pill: MAE 2.449, SSIM 0.93442, 5.18% above Δ5.
+- Whole frame: PSNR 42.8 dB.
+- Card: MAE 1.179, SSIM 0.99166, 1.10% above Δ5.
+- Pill: MAE 2.876, SSIM 0.92860, 8.75% above Δ5.
 - Pill max Δ is 47 on the same 1px bottom-border row; card max Δ is 24.
 
 Evidence: `docs/evidence/gate-smooth-side-d1.png`, `gate-smooth-diff-d1.png`.
@@ -70,16 +71,37 @@ Evidence: `docs/evidence/gate-smooth-side-d1.png`, `gate-smooth-diff-d1.png`.
 
 | Scene | Displacement | SSIM | MAE | > Δ5 | Status |
 | --- | --- | --- | --- | --- | --- |
-| Photo | off | 0.98857 | 1.027 | 2.86% | **FAIL** SSIM/MAE/Δ5 |
-| Photo | on | 0.98942 | 0.870 | 0.92% | **FAIL** SSIM |
-| Obsidian veins | off | 0.99185 | 0.793 | 0.55% | **FAIL** SSIM |
-| Obsidian veins | on | 0.99176 | 0.794 | 0.44% | **FAIL** SSIM |
+| Photo | off | 0.99318 | 0.796 | 0.994% | **FAIL SSIM only** (Δ5 passes) |
+| Photo | on | 0.99326 | 0.771 | 0.520% | **FAIL SSIM only** |
+| Obsidian veins | off | 0.99147 | 0.792 | 0.410% | **FAIL SSIM** |
+| Obsidian veins | on | 0.99145 | 0.790 | 0.343% | **FAIL SSIM** |
 
-Photo residuals concentrate at the card bottom and pill bottom, where the high-frequency
-water line changes fastest. The raw blur comparison (shadow and tint disabled) gives card
-interior MAE 4.37, so the remaining gap is the blur/compositing kernel on fine detail, not the
-tint values. Obsidian is close but its veined detail produces the same class of residual at a
-smaller amplitude.
+The stress residuals are now concentrated almost entirely in the **pill**:
+photo d0 card SSIM 0.99600 / MAE 1.196, pill SSIM 0.87596 / MAE 5.231. The pill is small but
+its block SSIM drags the frame below 0.995.
+
+Two measured causes:
+
+1. **Sibling surface shadow.** CSS paints the card’s outer shadow on the shared stage before
+   the pill is composited. Android draws each surface’s shadow inside that surface’s own box,
+   so the card shadow never reaches the stage behind the pill. With shadows disabled on both
+   sides, photo d0 rises to SSIM 0.99369 / MAE 0.678 / 0.633% > Δ5, and pill core MAE falls
+   from 3.29 to 1.81. The residual after that is the pill alpha/blur composition, not the tint.
+2. **Warp element alpha.** A Chromium probe of a 132×36 white div with `filter: blur(24px)`
+   measures center alpha ≈ 0.56; the shader now models that alpha with an unblurred scene
+   input and the card background-color underlay. This fixed the one-sided photo edge error
+   (photo card SSIM 0.981 → 0.996) but cannot recover the sibling shadow without a shared,
+   live backdrop render.
+
+Node fits of the blurred photo against sRGB and linear Gaussian candidates gave MAE 0.062 and
+0.068 at the best sigma, with the residual insensitive to sigma between 20–44 CSS px; the
+remaining difference is compositing/alpha, not a simple Gaussian kernel offset. The fitted
+sigma remains 1.4× the CSS radius for the Skia effect. The 0.28px aberration Gaussian is the
+only unported filter primitive.
+
+The attainable ceiling with the current static-backdrop architecture is therefore around
+SSIM 0.994 for the photo scene; crossing 0.995 requires the shared-stage shadow/live backdrop
+work (phase 2), not another tint parameter.
 
 Evidence: `gate-photo-side-d0.png`, `gate-photo-diff-d0.png`,
 `gate-obsidian-side-d0.png`, `gate-obsidian-diff-d0.png`.
@@ -95,8 +117,8 @@ changes below are measured against the Chromium reference.
 | Layer | Value | Implementation | Status |
 | --- | --- | --- | --- |
 | Card tint | `rgba(10,12,15,.56)` | `Card.tint` | exact |
-| Card blur | 34px + saturate 132% + brightness .82 | full-resolution Skia `BlurEffect`, 1.4× sigma calibration | canonical raw MAE 1.68 at card center; photo raw MAE 4.37 |
-| Card border | `rgba(235,239,244,.16)` over the card background-color | Chrome snaps the 1px border to 2 device px at 2.625×; the border is precomposited to the measured constant `0xFF323436` | matches the web raster; documented deviation from a translucent runtime border |
+| Card blur | 34px + saturate 132% + brightness .82 | full-resolution Skia `BlurEffect`, 1.4× sigma calibration; warp alpha modeled with an unblurred scene | canonical card SSIM 0.995; photo card 0.996 |
+| Card border | `rgba(235,239,244,.16)` over the card background-color | 2px rounded-box SDF in the shader over `mix(unblurred stage, tint, .56)`; the bottom edge blends .7 of the raw stage | top/left/right match the web raster; bottom edge remains a reported residual |
 | Card inner top | `inset 0 1px 0 rgba(255,255,255,.24)` | 1 CSS px highlight at the padding-box top, snapped to device rows | canonical top band SSIM 0.98 |
 | Card inner bottom | `inset 0 -22px 34px rgba(0,0,0,.36)` | Gaussian inset profile, sigma = blur/2, offset -22dp, full-height tail | matches the web profile; pill relies on the same model |
 | Card outer shadow | `0 24px 52px rgba(0,0,0,.56)` | Decal `BlurEffect`, offset 24dp, sigma 42dp, alpha .56 | still differs in the tails; background-only regions are within Δ5 |

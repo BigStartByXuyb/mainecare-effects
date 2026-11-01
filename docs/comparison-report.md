@@ -37,26 +37,25 @@ photo and veined Obsidian are stress scenes kept in the report.
 
 | Scene | Displacement | SSIM | MAE | > Δ5 | Max Δ | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| Canonical smooth | off | **0.99559** | **0.440** | **0.548%** | 43 | **PASS** |
-| Canonical smooth | on | **0.99556** | **0.428** | **0.423%** | 47 | **PASS** |
-| Photo | off | 0.98857 | 1.027 | 2.86% | 76 | FAIL |
-| Photo | on | 0.98942 | 0.870 | 0.92% | 88 | FAIL (SSIM) |
-| Obsidian veins | off | 0.99185 | 0.793 | 0.55% | 41 | FAIL (SSIM) |
-| Obsidian veins | on | 0.99176 | 0.794 | 0.44% | 44 | FAIL (SSIM) |
+| Canonical smooth | off | **0.99536** | **0.428** | **0.429%** | 43 | **PASS** |
+| Canonical smooth | on | **0.99531** | **0.422** | **0.355%** | 47 | **PASS** |
+| Photo | off | 0.99318 | 0.796 | 0.994% | 76 | FAIL SSIM only |
+| Photo | on | 0.99326 | 0.771 | 0.520% | 88 | FAIL SSIM only |
+| Obsidian veins | off | 0.99147 | 0.792 | 0.410% | 41 | FAIL SSIM |
+| Obsidian veins | on | 0.99145 | 0.790 | 0.343% | 44 | FAIL SSIM |
 
 Canonical region detail:
 
 | Region | MAE | SSIM | > Δ5 |
 | --- | --- | --- | --- |
-| Card d0 | 1.300 | 0.99224 | 2.16% |
-| Pill d0 | 2.337 | 0.93730 | 6.84% |
-| Card d1 | 1.238 | 0.99272 | 1.68% |
-| Pill d1 | 2.449 | 0.93442 | 5.18% |
+| Card d0 | 1.185 | 0.99184 | 1.22% |
+| Pill d0 | 3.180 | 0.92953 | 12.08% |
+| Card d1 | 1.179 | 0.99166 | 1.10% |
+| Pill d1 | 2.876 | 0.92860 | 8.75% |
 
 The canonical pass is deterministic: a repeat capture produced byte-identical metrics. The
-remaining canonical residuals are (a) the 1px pill bottom-border row where Compose and
-Chromium round the 36dp edge to different device rows (pill Δ43–47) and (b) the browser mask
-and blur kernel on the card edges. Card max Δ is 24 at the top edge.
+adaptive border matches the web border on the top/left/right edges; the pill bottom border
+and the later pill shadow composite remain the canonical residuals.
 
 ![Canonical d0 side-by-side](evidence/gate-smooth-side-d0.png)
 
@@ -87,6 +86,13 @@ The material implementation changed materially in this review iteration:
 - **`::before`.** The card pseudo-element is inset 2px, its vertical mask applies to all three
   gradients, and the repeating 116° texture uses device-pixel periods. Strength is calibrated
   to 0.75 against the gate.
+- **Warp alpha and scene.** CSS `filter: blur()` blurs the warp element’s alpha; a 132×36
+  probe measures center alpha ≈ 0.56. The shader samples an unblurred `uScene`, composites
+  `warp * alpha + stage * (1 - alpha)`, and uses the card background-color underlay. This moved
+  photo card SSIM from 0.981 to 0.996.
+- **Adaptive border.** The border is a 2px SDF in the shader over the unblurred stage; the
+  bottom edge blends raw stage at 0.7. Photo top border now matches at 110/110 and right at
+  98/99; the bottom border remains darker than the web.
 
 ## 2. Displacement gate — canonical PASS
 
@@ -105,11 +111,20 @@ the one unported primitive; its effect is below the measured Δ5 threshold on th
 
 ![Photo d0 difference](evidence/gate-photo-diff-d0.png)
 
-Photo d0 concentrates error along the card bottom and pill bottom, where the water line has
-the highest frequency. Raw-blur card MAE is 4.37, so the material is not the limiter; the
-Skia/Chromium blur kernel and the warp element's edge alpha are. Obsidian veins is much
-closer (0.9918 SSIM) but still below 0.995 because the veined texture produces the same class
-of high-frequency residual at smaller amplitude.
+Photo d0 now has card SSIM 0.99600 / MAE 1.196; the remaining failure is the pill
+(SSIM 0.87596 / MAE 5.231). The pill’s stage in Chromium is darkened by the **card’s outer
+shadow**, which is painted on the shared stage before the pill; Android’s per-surface shadow
+is confined to the card’s own box and never reaches the pill’s stage sample. With shadows
+disabled on both sides, photo d0 rises to SSIM 0.99369 / MAE 0.678 / 0.633% > Δ5 and pill core
+MAE falls from 3.29 to 1.81. The residual after that is the pill’s blurred-alpha composition,
+not a tint parameter.
+
+A Node fit of the blurred photo against sRGB and linear Gaussian candidates (sigma 20–44 CSS
+px) bottoms out at MAE 0.062 sRGB / 0.068 linear, insensitive to sigma; the remaining
+difference is compositing/alpha, not a simple kernel offset. The achievable ceiling with the
+static-backdrop, per-surface-shadow architecture is about SSIM 0.994 for photo. Obsidian is
+0.9915 because the same pill/shadow residual applies to its veined texture. Crossing 0.995 needs
+a shared live backdrop that includes surface shadows, which is phase-2 work.
 
 ![Obsidian d0 side-by-side](evidence/gate-obsidian-side-d0.png)
 

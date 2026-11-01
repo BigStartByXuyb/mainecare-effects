@@ -11,10 +11,11 @@ Date: 2026-11-01. Owner: mainecare-effects session. Consumer: MaineCare Android 
 The canonical smooth v21 feeding surface now passes; the stress scenes and device
 performance do not, so integration remains blocked:
 
-- Canonical static material: PASS (SSIM 0.99559, MAE 0.440, 0.548% above Δ5).
-- Canonical displacement: PASS (SSIM 0.99556, MAE 0.428, 0.423% above Δ5).
-- Photo stress scene: FAIL SSIM (0.98857) and MAE (1.027); veined Obsidian FAIL SSIM
-  (0.99185). The residual is the blur kernel on high-frequency detail.
+- Canonical static material: PASS (SSIM 0.99536, MAE 0.428, 0.429% above Δ5).
+- Canonical displacement: PASS (SSIM 0.99531, MAE 0.422, 0.355% above Δ5).
+- Photo stress scene: FAIL SSIM only (0.99318; MAE 0.796 and Δ5 pass); veined Obsidian FAIL
+  SSIM (0.99147). The residual is the card shadow on the shared CSS stage behind the pill and
+  the pill’s blurred-alpha composition; the static-backdrop ceiling is about 0.994.
 - Motion: PASS for the measured coverflow/stack runs.
 - Emulator performance: FAIL (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
   these numbers predate the final material changes and the V2528A device run.

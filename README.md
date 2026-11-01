@@ -35,7 +35,7 @@ adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.dem
 
 `screen` accepts `glass`, `deck` or `gate`. The gate screen is fixed at 390×844dp and accepts
 `displacement=0|1`, `text=0|1`, `shadow=0`, `before=0`, `bg=photo|obsidian`,
-`debug=1|2|3|4` (constant 0.5 / raw blur / map / graded warp) and `trace=0` (disable motion
+`debug=1|2|3|4|6` (constant 0.5 / raw blur / map / graded warp / stage colour) and `trace=0` (disable motion
 logs).
 
 ## Restoration gate
@@ -43,12 +43,13 @@ logs).
 The gate is defined in [`docs/golden-gate.md`](docs/golden-gate.md) and the measured results
 are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 
-- Canonical smooth v21 feeding surface, static: **PASS** (SSIM 0.99559, MAE 0.440,
-  99.45% within Δ5; target SSIM ≥0.995, MAE ≤1.0, ≥99% within Δ5).
-- Canonical smooth, displacement: **PASS** (SSIM 0.99556, MAE 0.428, 99.58% within Δ5;
+- Canonical smooth v21 feeding surface, static: **PASS** (SSIM 0.99536, MAE 0.428,
+  99.57% within Δ5; target SSIM ≥0.995, MAE ≤1.0, ≥99% within Δ5).
+- Canonical smooth, displacement: **PASS** (SSIM 0.99531, MAE 0.422, 99.65% within Δ5;
   target SSIM ≥0.99, MAE ≤1.5, ≥98% within Δ5).
-- Photo stress scene: **FAIL** (SSIM 0.9886, MAE 1.03); veined Obsidian stress scene:
-  **FAIL SSIM** (0.9918). The residual is the Chromium vs Skia blur kernel on fine detail.
+- Photo stress scene: **FAIL SSIM only** (SSIM 0.9932, MAE 0.796, Δ5 passes); veined
+  Obsidian: **FAIL SSIM** (0.9915). The residual is the card shadow on the shared CSS stage
+  behind the pill plus the pill’s blurred-alpha composition; see the comparison report.
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
 - Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;

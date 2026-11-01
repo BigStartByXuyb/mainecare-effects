@@ -13,6 +13,7 @@ internal object LiquidGlassShader {
     const val AGSL: String = """
 uniform shader uBackdrop;
 uniform shader uMap;
+uniform shader uScene;
 
 uniform float2 uSize;
 uniform float2 uBackdropOrigin;
@@ -31,6 +32,14 @@ uniform float uBeforeLayer;
 uniform float uBeforeStrength;
 uniform float uDensity;
 uniform float uBlurSigma;
+uniform float uInset;
+uniform float2 uWarpSize;
+uniform float2 uSceneOrigin;
+uniform float2 uSceneScale;
+uniform float uUnderlayAlpha;
+uniform float4 uBorderColor;
+uniform float uBorderWidth;
+uniform float uCornerRadius;
 uniform float uAfterGlow;
 uniform float uDebug;
 
@@ -92,7 +101,7 @@ float gradientPositionFor(float2 coord, float angleDeg, float2 size) {
 }
 
 float gradientPosition(float2 coord, float angleDeg) {
-    return gradientPositionFor(coord, angleDeg, uSize);
+    return gradientPositionFor(coord - uInset, angleDeg, uWarpSize);
 }
 
 // CSS filter saturate()/brightness() run before feDisplacementMap in the reference chain.
@@ -114,6 +123,11 @@ float gaussianCdf(float z) {
 }
 
 // Alpha of the blurred warp element: a rectangle convolved with the CSS blur.
+float roundedBoxSdf(float2 p, float2 halfSize, float radius) {
+    float2 q = abs(p) - halfSize + radius;
+    return min(max(q.x, q.y), 0.0) + length(max(q, float2(0.0))) - radius;
+}
+
 float warpAlpha(float2 coord, float2 size, float sigma) {
     if (sigma <= 0.0) return 1.0;
     float ax = gaussianCdf(coord.x / sigma) -
@@ -124,7 +138,8 @@ float warpAlpha(float2 coord, float2 size, float sigma) {
 }
 
 half4 main(float2 coord) {
-    float2 uv = coord / uSize;
+    float2 warpCoord = coord - uInset;
+    float2 uv = warpCoord / uWarpSize;
     float2 oR;
     float2 oG;
     float2 oB;
@@ -136,7 +151,7 @@ half4 main(float2 coord) {
         float d = roundedRectSDF(ix, float2(0.3, 0.2), 0.6);
         float amount = smoothStepCustom(0.8, 0.0, d - 0.15);
         float scaled = smoothStepCustom(0.0, 1.0, amount);
-        float2 raw = (ix * scaled + 0.5 - uv) * uSize;
+        float2 raw = (ix * scaled + 0.5 - uv) * uWarpSize;
         float k = uDisplacement / 50.0;
         oR = raw * k;
         oG = raw * k * (1.0 - uAberration * 0.05);
@@ -144,19 +159,20 @@ half4 main(float2 coord) {
     } else {
         // The SVG filter region is 170% of the element and feImage slices the square map
         // to cover it, so only the centered strip of the map reaches the element.
-        float2 filterSize = uSize * 1.7;
+        float2 filterSize = uWarpSize * 1.7;
         float side = max(filterSize.x, filterSize.y);
         float2 mapWindow = (filterSize / side) * (1.0 / 1.7);
         float2 mapUv = 0.5 + (uv - 0.5) * mapWindow;
         half4 m = uMap.eval(mapUv * uMapSize);
         mapColor = float3(m.r, m.g, m.b);
-        float2 d = float2(m.r, m.b) - 0.5;        float direction = sign(uDisplacement);
+        float2 d = float2(m.r, m.b) - 0.5;
+        float direction = sign(uDisplacement);
         oR = d * uDisplacement;
         oG = d * uDisplacement * (1.0 - direction * uAberration * 0.05);
         oB = d * uDisplacement * (1.0 - direction * uAberration * 0.10);
     }
 
-    float2 base = uBackdropOrigin + coord * uBackdropScale;
+    float2 base = uBackdropOrigin + warpCoord * uBackdropScale;
     half4 orig = uBackdrop.eval(base);
     half4 cr = uBackdrop.eval(base + oR * uBackdropScale);
     half4 cg = uBackdrop.eval(base + oG * uBackdropScale);
@@ -168,22 +184,29 @@ half4 main(float2 coord) {
     float3 cgF = applyGrade(cg);
     float3 cbF = applyGrade(cb);
 
+    half4 sceneRaw = uScene.eval(uSceneOrigin + warpCoord * uSceneScale);
+    float3 stageCol = mix(float3(sceneRaw.rgb), uTint.rgb, uUnderlayAlpha);
+
     float3 col;
     if (abs(uDisplacement) > 0.001) {
         // The SVG chain screen-blends three channel layers whose source alpha is the
         // blurred rect alpha. A short element (the v21 pill) is semi-transparent, so the
         // screen composite darkens it over the stage; a tall card stays opaque.
-        float warpA = warpAlpha(coord, uSize, uBlurSigma);
+        float warpA = warpAlpha(warpCoord, uWarpSize, uBlurSigma);
         float twoLayers = 1.0 - (1.0 - warpA) * (1.0 - warpA);
         float outA = 1.0 - (1.0 - twoLayers) * (1.0 - warpA);
         float3 premul = float3(warpA * crF.r, warpA * cgF.g, warpA * cbF.b);
         float3 screened = premul / max(outA, 0.0001);
-        col = screened * outA + float3(orig.rgb) * (1.0 - outA);
+        col = screened * outA + stageCol * (1.0 - outA);
     } else {
-        col = origF;
+        float warpA0 = warpAlpha(warpCoord, uWarpSize, uBlurSigma);
+        col = origF * warpA0 + stageCol * (1.0 - warpA0);
     }
     if (uDebug > 3.5 && uDebug < 4.5) {
         return half4(col, 1.0);
+    }
+    if (uDebug > 5.5 && uDebug < 6.5) {
+        return half4(stageCol, 1.0);
     }
     col = mix(col, uTint.rgb, uTint.a);
 
@@ -253,8 +276,8 @@ half4 main(float2 coord) {
     if (uBeforeLayer > 0.5) {
         // .card::before is inset 2px from the border-box (1px border + 1px inset).
         float inset = 2.0 * uDensity;
-        float2 beforeSize = max(uSize - 2.0 * inset, float2(1.0));
-        float2 beforeCoord = coord - inset;
+        float2 beforeSize = max(uWarpSize - 2.0 * inset, float2(1.0));
+        float2 beforeCoord = warpCoord - inset;
         float beforeY = beforeCoord.y / beforeSize.y;
         float mask = beforeY < 0.64
             ? mix(1.0, 0.65, beforeY / 0.64)
@@ -294,6 +317,22 @@ half4 main(float2 coord) {
         ) * 0.46;
         col = mix(col, float3(1.0), glow);
     }
+
+    float2 borderP = coord - uSize * 0.5;
+    float borderD = roundedBoxSdf(borderP, uSize * 0.5, uCornerRadius);
+    float borderInside = -borderD;
+    float borderMask = 1.0 - smoothstep(
+        uBorderWidth - 0.5,
+        uBorderWidth + 0.5,
+        borderInside
+    );
+    borderMask *= step(0.001, uBorderColor.a);
+    // Chrome's bottom border reads brighter than the card background-color composite,
+    // as if the stage contributes more at the bottom edge; blend the raw stage there.
+    float bottomW = smoothstep(0.75, 1.0, uv.y) * 0.7;
+    float3 borderBase = mix(stageCol, float3(sceneRaw.rgb), bottomW);
+    float3 borderCol = mix(borderBase, uBorderColor.rgb, uBorderColor.a);
+    col = mix(col, borderCol, borderMask);
 
     if (uDebug > 2.5 && uDebug < 3.5) {
         return half4(mapColor, 1.0);
