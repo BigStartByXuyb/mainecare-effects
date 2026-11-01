@@ -1,15 +1,15 @@
 {
-  "left": "verification/results/gpu2-d1-crop.png",
+  "left": "verification/results/final3-d1-crop.png",
   "right": "verification/results/w6-d1-s1-b1.png",
   "width": 1024,
   "height": 2216,
-  "meanAbsoluteError": 1.6251076745355746,
-  "rmse": 3.807769760192962,
-  "psnr": 36.51738999773234,
-  "ssim": 0.9842022743060886,
-  "maxChannelDiff": 70,
-  "percentOver2": 16.007692633122744,
-  "percentOver5": 9.389410466493683,
-  "percentOver10": 3.5648056746389893,
-  "percentOver20": 1.3117931379738268
+  "meanAbsoluteError": 1.62258532876429,
+  "rmse": 3.7839571172015476,
+  "psnr": 36.5718794889057,
+  "ssim": 0.9841848629765991,
+  "maxChannelDiff": 71,
+  "percentOver2": 16.108037074120034,
+  "percentOver5": 9.265180787454874,
+  "percentOver10": 3.4358606441787,
+  "percentOver20": 1.2905960909296028
 }

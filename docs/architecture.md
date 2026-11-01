@@ -87,11 +87,11 @@ telemetry sink used by the demo to record `deck.progress`, `coverflow.center` an
 1. **Backdrop.** The page provides a bitmap (photo or generated obsidian). `GlassBackdrop`
    draws it, records its root bounds and exposes `GlassBackdropState` through
    `LocalGlassBackdrop`.
-2. **Blur.** `GlassBackdropState.blurred(radiusPx)` records a 540px-long-side copy into a
-   Compose `GraphicsLayer` and applies a Skia `BlurEffect` (the same blur family Chromium
-   uses), then reads it back with `toImageBitmap()`. If the GPU path fails, it falls back to a
-   separable Gaussian in linear light (sigma = 0.75 × the CSS radius) at 300px. Results are
-   cached by rounded radius; the work runs once per distinct material, not per frame.
+2. **Blur.** `GlassBackdropState.blurred(radiusPx)` renders the backdrop at screen geometry
+   into a Compose `GraphicsLayer`, applies a Skia `BlurEffect` at 540px long side with a
+   calibrated 1.4× sigma, then reads it back with `toImageBitmap()`. There is no CPU or
+   API-version fallback: API 33+ is the only target. Results are cached by rounded radius; the
+   work runs once per distinct material, not per frame.
 3. **Source mapping.** A `GlassSurface` records its own root bounds. With `ContentScale.Crop`
    the mapping from surface pixels to bitmap pixels is computed from the drawn image size and
    the centered crop offset. The shader receives `uBackdropOrigin`, `uBackdropScale` and

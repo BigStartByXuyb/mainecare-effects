@@ -72,6 +72,7 @@ fun GlassSurface(
         backdrop,
         material.blurRadiusDp,
         density.density,
+        backdrop?.boundsInRoot,
     ) {
         value = backdrop?.blurred(material.blurRadiusDp * density.density)
     }
@@ -202,22 +203,16 @@ private fun bindShader(
     density: Float,
 ) {
     val bounds = backdrop.boundsInRoot
-    val factor = backdrop.contentScale.computeScaleFactor(
-        Size(backdrop.image.width.toFloat(), backdrop.image.height.toFloat()),
-        Size(bounds.width, bounds.height),
-    )
-    val drawnWidth = backdrop.image.width * factor.scaleX
-    val drawnHeight = backdrop.image.height * factor.scaleY
-    val drawOffsetX = (bounds.width - drawnWidth) / 2f
-    val drawOffsetY = (bounds.height - drawnHeight) / 2f
-
-    val glassX = (surfaceBounds.left - bounds.left - drawOffsetX) / factor.scaleX
-    val glassY = (surfaceBounds.top - bounds.top - drawOffsetY) / factor.scaleY
-    val blurFactor = backdropBitmap.width / backdrop.image.width.toFloat()
+    val factorX = backdropBitmap.width / bounds.width
+    val factorY = backdropBitmap.height / bounds.height
 
     shader.setFloatUniform("uSize", surfaceSize.width, surfaceSize.height)
-    shader.setFloatUniform("uBackdropOrigin", glassX * blurFactor, glassY * blurFactor)
-    shader.setFloatUniform("uBackdropScale", blurFactor / factor.scaleX, blurFactor / factor.scaleY)
+    shader.setFloatUniform(
+        "uBackdropOrigin",
+        (surfaceBounds.left - bounds.left) * factorX,
+        (surfaceBounds.top - bounds.top) * factorY,
+    )
+    shader.setFloatUniform("uBackdropScale", factorX, factorY)
     shader.setFloatUniform("uMapSize", mapBitmap.width.toFloat())
     shader.setFloatUniform("uDisplacement", params.signedDisplacementScale * density)
     shader.setFloatUniform("uAberration", params.aberrationIntensity)

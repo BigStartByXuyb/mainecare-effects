@@ -27,13 +27,13 @@ Criteria (whole 1024×2216 frame, and separately card/pill regions):
 
 Current status: **FAIL**.
 
-- Whole frame: SSIM 0.98841, MAE 1.236, PSNR 39.68 dB, 94.89% of pixels within Δ5.
-- Card region: MAE 3.79, RMSE 5.22, max Δ 58, 18.7% above Δ5, 2.4% above Δ10.
-- Pill region: MAE 12.78, RMSE 14.80, max Δ 68, 83.7% above Δ5, 63.9% above Δ10.
+- Whole frame: SSIM 0.98839, MAE 1.239, PSNR 39.70 dB, 95.11% of pixels within Δ5.
+- Card region: MAE 3.77, RMSE 5.18, max Δ 58, 17.7% above Δ5, 2.4% above Δ10.
+- Pill region: MAE 12.55, RMSE 14.62, max Δ 69, 82.8% above Δ5, 62.6% above Δ10.
 - Background outside the card matches closely, so the backdrop crop mapping is correct and
   the remaining difference is material and edge compositing.
-- Progress in this review iteration: MAE 2.775 → 1.236 and SSIM 0.9784 → 0.9884 after
-  (a) linear-light Gaussian blur calibrated to 0.75× the CSS sigma, (b) RenderEffect Decal
+- Progress in this review iteration: MAE 2.775 → 1.239 and SSIM 0.9784 → 0.9884 after
+  (a) screen-space Skia GPU blur with a 1.4× sigma calibration, (b) RenderEffect Decal
   shadows with calibrated spread, (c) a border-box web reference and tint underlay, and
   (d) the top highlight moved inside the border. Card max Δ fell from 112 to 58. The target
   is still not met.
@@ -57,8 +57,8 @@ Criteria:
 
 Current status: **FAIL**.
 
-- Whole frame: SSIM 0.98420, MAE 1.625, PSNR 36.52 dB, 90.61% within Δ5.
-- Card region: MAE 5.23, 38.7% above Δ5; pill: MAE 24.33, 93.5% above Δ5.
+- Whole frame: SSIM 0.98418, MAE 1.623, PSNR 36.57 dB, 90.73% within Δ5.
+- Card region: MAE 5.17, 38.1% above Δ5; pill: MAE 24.06, 93.5% above Δ5.
 - The displacement itself is functioning; `displacementScale` is now multiplied by display
   density so the shader works in device pixels instead of CSS units. The map is still sampled
   over the card directly. A 170% filter-region window with four candidate mappings was tested
@@ -75,7 +75,7 @@ Every value is transcribed from `feeding-v21-obsidian.css` / `feeding-v6-shell.c
 | Layer | Value | Implementation | Status |
 | --- | --- | --- | --- |
 | Card tint | `rgba(10,12,15,.56)` | `MaineGlassMaterials.Card.tint` | value exact; blending under investigation |
-| Card blur | 34 px + saturate 132% + brightness .82 | GraphicsLayer Skia BlurEffect at 540px, CPU linear Gaussian fallback | calibrated; blur-only raw MAE 3.31 |
+| Card blur | 34 px + saturate 132% + brightness .82 | screen-space GraphicsLayer Skia BlurEffect at 540px, sigma 1.4× calibration | calibrated; blur-only raw MAE 2.74 |
 | Card border | `rgba(235,239,244,.16)` | `borderColor` + 1dp stroke | value exact; rasterization differs |
 | Card inner top | `inset 0 1px 0 rgba(255,255,255,.24)` | `topHighlightColor` | approximate line |
 | Card inner bottom | `inset 0 -22px 34px rgba(0,0,0,.36)` | `bottomInnerShadowColor`, `innerShadowDepthDp=34` | approximate gradient |

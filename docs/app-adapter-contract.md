@@ -9,8 +9,8 @@ Date: 2026-11-01. Owner: mainecare-effects session. Consumer: MaineCare Android 
 
 The gate is **not passed**:
 
-- Static material: FAIL (SSIM 0.98841, MAE 1.236; target SSIM ≥0.995, MAE ≤1.0).
-- Displacement: FAIL (SSIM 0.98420, MAE 1.625; target ≥0.99, ≤1.5).
+- Static material: FAIL (SSIM 0.98839, MAE 1.239; target SSIM ≥0.995, MAE ≤1.0).
+- Displacement: FAIL (SSIM 0.98418, MAE 1.623; target ≥0.99, ≤1.5).
 - Motion: PASS for the measured coverflow/stack runs.
 - Emulator performance: FAIL (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms).
 
