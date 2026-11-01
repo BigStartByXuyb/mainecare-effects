@@ -131,8 +131,10 @@ Current status: **PASS for the measured run**.
 
 Current status: **FAIL** on the emulator run.
 
-Deck screen (10s of swipes, `trace=0`, 530 frames): 33 janky frames (6.23%), P50 18ms,
-P95 32ms, P99 44ms, 3 missed vsync, PSS 139.4MB.
+Deck screen (10s of swipes, `trace=0`) run 1: 530 frames, 33 janky (6.23%), P50 18ms,
+P95 32ms, P99 44ms, 3 missed vsync, PSS 139.4MB. Run 2 after gating the telemetry collectors:
+526 frames, 35 janky (6.65%), P50 24ms, P95 36ms, P99 57ms, 3 missed vsync, PSS 139.7MB. The
+spread is host-load variance on the shared emulator; both runs fail the thresholds.
 
 Glass screen (10s of drags, `trace=0`, 393 frames): 18 janky frames (4.58%), P50 20ms,
 P95 29ms, P99 34ms, 1 missed vsync, PSS 116.5MB.

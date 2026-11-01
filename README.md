@@ -46,8 +46,8 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 - Displacement: **FAIL** (SSIM 0.9754, MAE 3.05; target SSIM ≥0.99, MAE ≤1.5).
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
-- Performance on the shared API36 emulator: **FAIL** (deck 6.23% janky, P95 32ms; glass 4.58%,
-  P95 29ms; target 0 janky, P95 ≤17ms). V2528A is not connected yet.
+- Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;
+  glass 4.58%, P95 29ms; target 0 janky, P95 ≤17ms). V2528A is not connected yet.
 
 No document claims a pass that the numbers do not support.
 

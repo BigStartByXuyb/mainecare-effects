@@ -46,6 +46,11 @@ class MainActivity : ComponentActivity() {
         val gateText = intent.getStringExtra("text") == "1"
         val gateDebug = intent.getStringExtra("debug")?.toFloatOrNull() ?: 0f
         val traceEnabled = intent.getStringExtra("trace") != "0"
+        MotionTrace.sink = if (traceEnabled) {
+            { line -> Log.i("MCEffectsMotion", line) }
+        } else {
+            null
+        }
         setContent {
             MaineEffectsTheme {
                 DemoRoot(
@@ -68,14 +73,6 @@ private fun DemoRoot(
     gateDebug: Float,
     traceEnabled: Boolean,
 ) {
-    DisposableEffect(traceEnabled) {
-        MotionTrace.sink = if (traceEnabled) {
-            { line -> Log.i("MCEffectsMotion", line) }
-        } else {
-            null
-        }
-        onDispose { MotionTrace.sink = null }
-    }
     if (initialScreen == "gate") {
         GateScreen(
             forceDisplacement = gateDisplacement,

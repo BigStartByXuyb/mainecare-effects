@@ -11,6 +11,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.filterNotNull
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -37,7 +38,13 @@ fun CardDeck(
     content: @Composable (Int) -> Unit,
 ) {
     LaunchedEffect(state) {
-        snapshotFlow { state.currentPage + state.currentPageOffsetFraction }
+        snapshotFlow {
+            if (MotionTrace.sink == null) {
+                null
+            } else {
+                state.currentPage + state.currentPageOffsetFraction
+            }
+        }.filterNotNull()
             .collect { MotionTrace.emit("deck.progress", it) }
     }
     HorizontalPager(

@@ -22,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.filterNotNull
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -90,15 +91,19 @@ fun CardStack(
 
     LaunchedEffect(Unit) {
         snapshotFlow {
-            floatArrayOf(
-                dragX,
-                dragRotation,
-                dragProgress,
-                throwX.value,
-                throwRotation.value,
-                throwAlpha.value,
-            )
-        }.collect { values ->
+            if (MotionTrace.sink == null) {
+                null
+            } else {
+                floatArrayOf(
+                    dragX,
+                    dragRotation,
+                    dragProgress,
+                    throwX.value,
+                    throwRotation.value,
+                    throwAlpha.value,
+                )
+            }
+        }.filterNotNull().collect { values ->
             MotionTrace.emit("stack.state", *values)
         }
     }

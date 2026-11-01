@@ -134,14 +134,15 @@ captured locally but is not committed (binary size); the numeric trace is strong
 
 | Screen | Frames | Janky | P50 | P95 | P99 | Missed vsync | PSS |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Deck (deck+stack+coverflow swipes) | 530 | 33 (6.23%) | 18 ms | 32 ms | 44 ms | 3 | 139.4 MB |
+| Deck run 1 (deck+stack+coverflow) | 530 | 33 (6.23%) | 18 ms | 32 ms | 44 ms | 3 | 139.4 MB |
+| Deck run 2 (telemetry off) | 526 | 35 (6.65%) | 24 ms | 36 ms | 57 ms | 3 | 139.7 MB |
 | Glass (card drags) | 393 | 18 (4.58%) | 20 ms | 29 ms | 34 ms | 1 | 116.5 MB |
 
-Required: 0 janky, P95 ≤ 17ms. **Not met.** The emulator is running with a reduced 1.5GB
-allocation because the host page file was exhausted, and the host is shared with other
-workloads; this is not a V2528A result. The deck screen is the heavier one because several
-glass surfaces animate at once; removing per-frame `CardDeck` recomposition lowered P95 from
-36ms to 32ms, but did not reach the threshold.
+Required: 0 janky, P95 ≤ 17ms. **Not met.** The two deck runs bracket host-load variance
+(P50 18–24ms, P95 32–36ms); the glass run is steadier (P50 20ms, P95 29ms). The emulator is
+running with a reduced 1.5GB allocation because the host page file was exhausted, and the host
+is shared with other workloads; this is not a V2528A result. Removing per-frame `CardDeck`
+recomposition helped one run but did not reach the threshold.
 
 ## 6. Comparison with the reference libraries
 
