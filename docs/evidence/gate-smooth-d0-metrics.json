@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/ab5-smooth-d0-crop.png",
+  "right": "verification/results/ws-current-d0.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 0.4279451703049789,
+  "rmse": 1.154220900339211,
+  "psnr": 46.88502492591644,
+  "ssim": 0.9953635774671681,
+  "maxChannelDiff": 62,
+  "percentOver2": 3.890737815884476,
+  "percentOver5": 0.42936139158393505,
+  "percentOver10": 0.13260273296480143,
+  "percentOver20": 0.03089216211642599
+}

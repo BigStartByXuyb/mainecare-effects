@@ -1,0 +1,15 @@
+{
+  "left": "verification/results/ab5-obsidian-d0-crop.png",
+  "right": "verification/results/ws-current-obsidian-d0.png",
+  "width": 1024,
+  "height": 2216,
+  "meanAbsoluteError": 0.7922486673623647,
+  "rmse": 1.3334195583111728,
+  "psnr": 45.63146718919355,
+  "ssim": 0.9914731590595778,
+  "maxChannelDiff": 62,
+  "percentOver2": 4.884927797833935,
+  "percentOver5": 0.4098830240297834,
+  "percentOver10": 0.131412877933213,
+  "percentOver20": 0.03027520024819495
+}

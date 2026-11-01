@@ -1,0 +1,13 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+.DS_Store
+hs_err_pid*.log
+replay_pid*.log
+verification/node_modules/
+verification/results/
+verification/frames/
+verification/web-reference/gate-web-*.png
