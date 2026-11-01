@@ -119,12 +119,17 @@ Each row changes one variable on both renderers; no threshold is changed.
 | No card/outer shadow | **0.99369** | **0.678** | 0.633% | **0.99299** | **0.663** | 0.368% |
 | Live shadowed stage (diagnostic) | 0.99327 | 0.769 | 0.575% | 0.99155 | 0.783 | 0.354% |
 | No blur (grade only) | 0.99240 | 0.818 | 1.025% | 0.99088 | 0.799 | 0.407% |
+| Offscreen CPU box-Gaussian, sigma 1.0 | 0.99324 | 0.779 | 0.883% | 0.99167 | 0.768 | 0.356% |
 
 - **Card shadow** is real: removing it raises photo SSIM .99318 → .99369 and pill core MAE
   3.29 → 1.81. The live-stage control (a scene bitmap that already contains the card shadow)
   recovers the pill core to 1.62 but does not cross the frame threshold.
 - **Blur kernel** is not the limiter: removing blur lowers SSIM (.99318 → .99240,
-  .99147 → .99088) instead of improving it.
+  .99147 → .99088) instead of improving it. A separate offscreen CPU box-Gaussian
+  (three separable passes, Chromium-aligned sigma = 1.0× CSS radius, no 1.4 calibration)
+  improves the raw photo card MAE 4.37 → 3.58 but only moves the frame to 0.99324 / 0.99167.
+  Sweeping its sigma 0.8–1.2 leaves SSIM at 0.99323–0.99324, so the kernel is not the
+  remaining limit.
 - **Static backdrop** is part of the residual but not the whole: the live shadowed stage
   improves the pill’s core and over-Δ5 count, yet the frame remains at .99327/.99155 because
   the short pill’s border/highlight/alpha rasterization and the CSS vs Android edge

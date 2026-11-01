@@ -39,6 +39,7 @@ fun GateScreen(
     backgroundAsset: String = "backdrop-gate.png",
     sceneAsset: String? = null,
     blurSigmaScale: Float = 1.4f,
+    blurMode: String = "skia",
 ) {
     val backdrop = rememberBackdropAsset(backgroundAsset) ?: return
     val scene = sceneAsset?.let { rememberBackdropAsset(it) }
@@ -58,6 +59,11 @@ fun GateScreen(
                 modifier = Modifier.fillMaxSize(),
                 sceneImage = scene,
                 blurSigmaScale = blurSigmaScale,
+                blurMode = if (blurMode == "cpu") {
+                    com.mainecare.effects.glass.GlassBlurMode.CpuBox
+                } else {
+                    com.mainecare.effects.glass.GlassBlurMode.Skia
+                },
             ) {
                 Box(Modifier.fillMaxSize()) {
                     val base = MaineGlassMaterials.Card.copy(

@@ -41,6 +41,9 @@ import kotlin.math.roundToInt
 
 val LocalGlassBackdrop = staticCompositionLocalOf<GlassBackdropState?> { null }
 
+/** Diagnostic choice between the Skia effect and the offscreen box-Gaussian. */
+enum class GlassBlurMode { Skia, CpuBox }
+
 /**
  * Holds the captured backdrop bitmap and a small per-radius blur cache.
  *
@@ -56,6 +59,7 @@ class GlassBackdropState(
     val sceneImage: ImageBitmap? = null,
     private val graphicsLayer: GraphicsLayer,
     private val blurSigmaScale: Float = 1.4f,
+    private val blurMode: GlassBlurMode = GlassBlurMode.Skia,
 ) {
     private var boundsState by mutableStateOf(Rect.Zero)
 
@@ -74,9 +78,12 @@ class GlassBackdropState(
     suspend fun blurred(radiusPx: Float): ImageBitmap {
         val key = radiusPx.roundToInt().coerceAtLeast(0)
         synchronized(blurCache) { blurCache[key] }?.let { return it }
-        val gpu = gpuBlur(key.toFloat())
-        synchronized(blurCache) { blurCache[key] = gpu }
-        return gpu
+        val result = when (blurMode) {
+            GlassBlurMode.Skia -> gpuBlur(key.toFloat())
+            GlassBlurMode.CpuBox -> cpuBlur(key.toFloat())
+        }
+        synchronized(blurCache) { blurCache[key] = result }
+        return result
     }
 
     /**
@@ -124,6 +131,50 @@ class GlassBackdropState(
         output
     }
 
+    private suspend fun cpuBlur(radiusPx: Float): ImageBitmap {
+        val bounds = awaitBounds()
+        if (bounds.width <= 0f || bounds.height <= 0f) {
+            error("GlassBackdrop has no layout bounds")
+        }
+        val scale = min(
+            1f,
+            GLASS_BLUR_MAX_DIMENSION / max(bounds.width, bounds.height),
+        )
+        val source = withContext(Dispatchers.Main) {
+            recordBackdrop(bounds, scale)
+            graphicsLayer.toImageBitmap()
+        }
+        return withContext(Dispatchers.Default) {
+            val android = source.asAndroidBitmap().copy(Bitmap.Config.ARGB_8888, false)
+            val blurred = CpuBoxBlur.blur(android, radiusPx * scale * blurSigmaScale)
+            blurred.asImageBitmap()
+        }
+    }
+
+    private suspend fun recordBackdrop(bounds: Rect, scale: Float) {
+        val width = max(1, (bounds.width * scale).roundToInt())
+        val height = max(1, (bounds.height * scale).roundToInt())
+        val fit = contentScale.computeScaleFactor(
+            Size(image.width.toFloat(), image.height.toFloat()),
+            Size(bounds.width, bounds.height),
+        )
+        val dstWidth = image.width * fit.scaleX * scale
+        val dstHeight = image.height * fit.scaleY * scale
+        val dstX = ((bounds.width - image.width * fit.scaleX) / 2f) * scale
+        val dstY = ((bounds.height - image.height * fit.scaleY) / 2f) * scale
+        graphicsLayer.record(
+            density = Density(1f),
+            layoutDirection = LayoutDirection.Ltr,
+            size = IntSize(width, height),
+        ) {
+            drawImage(
+                image = image,
+                dstOffset = IntOffset(dstX.roundToInt(), dstY.roundToInt()),
+                dstSize = IntSize(dstWidth.roundToInt(), dstHeight.roundToInt()),
+            )
+        }
+    }
+
     private suspend fun awaitBounds(): Rect {
         val current = boundsInRoot
         if (current.width > 0f && current.height > 0f) return current
@@ -147,10 +198,13 @@ fun rememberGlassBackdrop(
     contentScale: ContentScale = ContentScale.Crop,
     sceneImage: ImageBitmap? = null,
     blurSigmaScale: Float = 1.4f,
+    blurMode: GlassBlurMode = GlassBlurMode.Skia,
 ): GlassBackdropState {
     val graphicsLayer = rememberGraphicsLayer()
-    return remember(image, contentScale, sceneImage, graphicsLayer, blurSigmaScale) {
-        GlassBackdropState(image, contentScale, sceneImage, graphicsLayer, blurSigmaScale)
+    return remember(image, contentScale, sceneImage, graphicsLayer, blurSigmaScale, blurMode) {
+        GlassBackdropState(
+            image, contentScale, sceneImage, graphicsLayer, blurSigmaScale, blurMode,
+        )
     }
 }
 
@@ -165,9 +219,12 @@ fun GlassBackdrop(
     contentScale: ContentScale = ContentScale.Crop,
     sceneImage: ImageBitmap? = null,
     blurSigmaScale: Float = 1.4f,
+    blurMode: GlassBlurMode = GlassBlurMode.Skia,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    val state = rememberGlassBackdrop(image, contentScale, sceneImage, blurSigmaScale)
+    val state = rememberGlassBackdrop(
+        image, contentScale, sceneImage, blurSigmaScale, blurMode,
+    )
     CompositionLocalProvider(LocalGlassBackdrop provides state) {
         Box(
             modifier = modifier

@@ -140,12 +140,16 @@ The stress scenes are not called “100%” until they meet the same thresholds.
 | No card/outer shadow | **0.99369** / **0.678** / 0.633% | **0.99299** / **0.663** / 0.368% |
 | Live shadowed stage (diagnostic) | 0.99327 / 0.769 / 0.575% | 0.99155 / 0.783 / 0.354% |
 | No blur (grade only) | 0.99240 / 0.818 / 1.025% | 0.99088 / 0.799 / 0.407% |
+| Offscreen CPU box-Gaussian, sigma 1.0 | 0.99324 / 0.779 / 0.883% | 0.99167 / 0.768 / 0.356% |
 
 Removing the card shadow gives the best result but still misses 0.995; removing blur makes
 the comparison worse. Feeding a scene bitmap that already includes the card shadow recovers
 the pill core but not the frame, because the short pill’s border/highlight/alpha
-rasterization and CSS-vs-Android edge compositing remain. The measured ceiling for the
-current static-backdrop, per-surface-shadow architecture is ≈0.994 SSIM.
+rasterization and CSS-vs-Android edge compositing remain. A separate offscreen CPU
+box-Gaussian with Chromium-aligned sigma 1.0 (three separable passes, no 1.4 calibration)
+lifts raw photo card MAE 4.37 → 3.58 but only reaches 0.99324 / 0.99167; sigma 0.8–1.2 is
+flat. The measured ceiling for the current static-backdrop, per-surface-shadow architecture
+is ≈0.994 SSIM.
 
 Visual tail: 99.4–99.6% of pixels are within Δ5; >Δ20 is 0.03–0.04%; max Δ is 62–74 and is
 localized to the pill border. It is not visible at 1:1; close-up inspection shows a slight
