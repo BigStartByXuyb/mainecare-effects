@@ -51,6 +51,10 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 
 No document claims a pass that the numbers do not support.
 
+The App adapter contract is a proposal in
+[`docs/app-adapter-contract.md`](docs/app-adapter-contract.md); no dependency or App
+integration exists yet.
+
 ## Verification harness
 
 - `verification/generate-backdrop.mjs` — deterministic synthetic photo + obsidian PNGs.
