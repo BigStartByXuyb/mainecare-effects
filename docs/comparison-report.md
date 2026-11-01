@@ -42,21 +42,21 @@ Difference image (bright = larger Δ; full frame):
 
 | Region | MAE | RMSE | Max Δ | > Δ5 | > Δ10 |
 | --- | --- | --- | --- | --- | --- |
-| Whole 1024×2216 frame | 1.243 | 2.654 | 69 | 5.05% | 1.44% |
-| Card (898×525) | 3.77 | 5.22 | 58 | 18.5% | 2.5% |
-| Pill (347×95) | 12.66 | 14.70 | 69 | 83.3% | 63.2% |
+| Whole 1024×2216 frame | 1.236 | 2.647 | 68 | 5.11% | 1.44% |
+| Card (898×525) | 3.79 | 5.22 | 58 | 18.7% | 2.4% |
+| Pill (347×95) | 12.78 | 14.80 | 68 | 83.7% | 63.9% |
 
-Whole-frame SSIM 0.98832, PSNR 39.65 dB. Required: SSIM ≥ 0.995, MAE ≤ 1.0, ≥99% within Δ5.
-**Not met**, but this iteration cut whole-frame MAE by 55% (2.775 → 1.243) and raised SSIM
-from 0.9784 to 0.9883.
+Whole-frame SSIM 0.98841, PSNR 39.68 dB. Required: SSIM ≥ 0.995, MAE ≤ 1.0, ≥99% within Δ5.
+**Not met**, but this iteration cut whole-frame MAE by 55% (2.775 → 1.236) and raised SSIM
+from 0.9784 to 0.9884.
 
 The background alignment is good, which isolates the mismatch to the material. Changes made in
 this review iteration:
 
-- **Blur model.** Replaced the 3-pass box with a separable Gaussian in **linear light**,
-  calibrated to 0.75× the CSS sigma at a 300px working resolution. Against a blur-only web
-  reference, the raw interior MAE fell from 5.28 (sRGB box) to 3.49 (linear Gaussian). The
-  remaining raw-blur gap is the Chromium kernel/resampling, not the color space.
+- **Blur model.** Replaced the 3-pass box with a Skia `GraphicsLayer` + `BlurEffect` at 540px
+  (CPU linear-light Gaussian fallback), which uses the same blur family as Chromium. Against a
+  blur-only web reference, the raw interior MAE fell from 5.28 (sRGB box) to 3.31. The
+  remaining raw-blur gap is resampling/edge handling, not the color space.
 - **Reference bug fixed.** The web gate used default `content-box`, so its 1px border enlarged
   the card/pill by 2 CSS px. It now uses `border-box`; the card max Δ fell from 112 to 58.
 - **Shadow.** Compose elevation was replaced with a RenderEffect `Decal` shadow (offset 24dp,
@@ -81,11 +81,11 @@ linear; the difference is not a gamma mismatch.
 
 | Region | MAE | RMSE | Max Δ | > Δ5 | > Δ10 |
 | --- | --- | --- | --- | --- | --- |
-| Whole frame | 1.641 | 3.821 | 71 | 9.47% | 3.59% |
-| Card | 5.25 | 7.02 | 63 | 39.0% | 10.8% |
-| Pill | 24.19 | 25.76 | 71 | 93.5% | 92.3% |
+| Whole frame | 1.625 | 3.808 | 70 | 9.39% | 3.56% |
+| Card | 5.23 | 7.00 | 63 | 38.7% | 10.7% |
+| Pill | 24.33 | 25.89 | 70 | 93.5% | 92.3% |
 
-Whole-frame SSIM 0.98406, PSNR 36.49 dB. Displacement is active; the gate fails because the
+Whole-frame SSIM 0.98420, PSNR 36.52 dB. Displacement is active; the gate fails because the
 material baseline already fails and the displacement/edge model still differs:
 
 - `displacementScale` is now multiplied by display density, fixing a device-pixel vs CSS-pixel
@@ -160,8 +160,8 @@ exhausted, and the host is shared with other workloads; this is not a V2528A res
 
 ## 7. What is required before an app integration / 100% claim
 
-1. Close the remaining raw-blur gap (linear Gaussian MAE 3.49) and the card edge gap; the
-   whole-frame MAE is 1.243, but the card is 3.77 and the pill is 12.66.
+1. Close the remaining raw-blur gap (Skia blur MAE 3.31) and the card edge gap; the
+   whole-frame MAE is 1.236, but the card is 3.79 and the pill is 12.78.
 2. Refine `feature-card::before` / `advice::after` and the remaining per-layer textures, or
    explicitly descope them with the user. The current `::before` is a 0.5-strength
    approximation.

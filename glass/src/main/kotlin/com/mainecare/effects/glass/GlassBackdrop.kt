@@ -25,6 +25,12 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.BlurEffect
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -48,6 +54,7 @@ val LocalGlassBackdrop = staticCompositionLocalOf<GlassBackdropState?> { null }
 class GlassBackdropState(
     val image: ImageBitmap,
     val contentScale: ContentScale = ContentScale.Crop,
+    private val graphicsLayer: GraphicsLayer? = null,
 ) {
     var boundsInRoot by mutableStateOf(Rect.Zero)
 
@@ -57,6 +64,13 @@ class GlassBackdropState(
     suspend fun blurred(radiusPx: Float): ImageBitmap {
         val key = radiusPx.roundToInt().coerceAtLeast(0)
         synchronized(blurCache) { blurCache[key] }?.let { return it }
+        if (graphicsLayer != null) {
+            val gpu = runCatching { gpuBlur(key.toFloat()) }.getOrNull()
+            if (gpu != null) {
+                synchronized(blurCache) { blurCache[key] = gpu }
+                return gpu
+            }
+        }
         return withContext(Dispatchers.Default) {
             synchronized(blurCache) { blurCache[key] }?.let { return@withContext it }
             val source = image.asAndroidBitmap()
@@ -69,12 +83,47 @@ class GlassBackdropState(
         }
     }
 
+    /**
+     * GPU path through the same Skia blur Chromium uses. The source is halved to keep the
+     * cached bitmap small; the shader mapping accounts for the resulting scale.
+     */
+    private suspend fun gpuBlur(radiusPx: Float): ImageBitmap = withContext(Dispatchers.Main) {
+        val layer = graphicsLayer ?: error("no graphics layer")
+        val source = image.asAndroidBitmap()
+        val largest = max(source.width, source.height)
+        val scale = min(1f, GLASS_BLUR_MAX_DIMENSION / largest.toFloat())
+        val width = max(1, (source.width * scale).roundToInt())
+        val height = max(1, (source.height * scale).roundToInt())
+        val scaled = if (scale < 1f) {
+            Bitmap.createScaledBitmap(source, width, height, true)
+        } else {
+            source
+        }
+        val input = scaled.asImageBitmap()
+        layer.record(
+            density = Density(1f),
+            layoutDirection = LayoutDirection.Ltr,
+            size = IntSize(width, height),
+        ) {
+            drawImage(input, dstSize = IntSize(width, height))
+        }
+        layer.renderEffect = BlurEffect(
+            radiusPx * scale,
+            radiusPx * scale,
+            TileMode.Clamp,
+        )
+        val output = layer.toImageBitmap()
+        layer.renderEffect = null
+        output
+    }
+
     fun clearBlurCache() {
         synchronized(blurCache) { blurCache.clear() }
     }
 
     private companion object {
         const val BLUR_MAX_DIMENSION = 300
+        const val GLASS_BLUR_MAX_DIMENSION = 540f
     }
 }
 
@@ -82,8 +131,11 @@ class GlassBackdropState(
 fun rememberGlassBackdrop(
     image: ImageBitmap,
     contentScale: ContentScale = ContentScale.Crop,
-): GlassBackdropState = remember(image, contentScale) {
-    GlassBackdropState(image, contentScale)
+): GlassBackdropState {
+    val graphicsLayer = rememberGraphicsLayer()
+    return remember(image, contentScale, graphicsLayer) {
+        GlassBackdropState(image, contentScale, graphicsLayer)
+    }
 }
 
 /**
