@@ -148,7 +148,8 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
   Obsidian: **FAIL SSIM** (0.9915). The residual is the card shadow on the shared CSS stage
   behind the pill plus the pill’s blurred-alpha composition; the offscreen CPU
   box-Gaussian attempt reached 0.99324 / 0.99167, confirming the kernel is not the limiter.
-  See the comparison report.
+  The measured ceiling for the static-backdrop/per-surface-shadow path is **≈0.994**;
+  see the comparison report and [`docs/release-0.1.0.md`](docs/release-0.1.0.md).
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
 - Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;
@@ -177,7 +178,9 @@ for the merged test package acceptance.
 
 Project code is Apache-2.0 (`LICENSE`). Displacement maps and filter math are derived from
 liquid-glass-react 1.1.1 (MIT); see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
-`third_party/licenses/`. The reviewed Apache-2.0 projects (Haze, Cloudy, AndroidLiquidGlass,
+`third_party/licenses/`. Every Maven artifact publishes `-license.txt`, `-notice.txt` and
+`-third-party-notices.md` classifiers, and the sources jar carries the same files under
+`META-INF/`. The reviewed Apache-2.0 projects (Haze, Cloudy, AndroidLiquidGlass,
 NadeemIqbal/liquid-glass) contributed design review only; no code was copied.
 
 No test accounts, credentials, or personal data are stored in this repository. The demo
