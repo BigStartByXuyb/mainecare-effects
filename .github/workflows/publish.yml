@@ -46,6 +46,9 @@ jobs:
             done
           done
 
+      - name: Use CI Gradle memory profile
+        run: cp .github/ci-gradle.properties gradle.properties
+
       - name: Publish 0.1.0
         env:
           GITHUB_ACTOR: ${{ github.actor }}
