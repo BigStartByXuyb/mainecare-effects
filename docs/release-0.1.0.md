@@ -181,6 +181,19 @@ this ceiling; see `docs/golden-gate.md` for the full control matrix.
   no source was copied.
 - No test accounts, credentials or personal data are stored in the artifact or repository.
 
+## V2528A acceptance
+
+The demo APK for device acceptance is built outside the repository:
+
+```
+output/mainecare-effects-demo-0.1.0-debug.apk
+sha256 906b59bed31bcdcce3b23bd868ffed9035de0737f40f52fa949660b1f4f5b3d4
+```
+
+Install, cold-start, gfxinfo and meminfo steps are in `docs/device-acceptance-v2528a.md` and
+`verification/device-perf.sh`. V2528A is not connected in this workspace; the device run is
+blocked on USB access. Emulator numbers are diagnostic only.
+
 ## Acceptance sequence
 
 1. Build/install the merged test package and accept the canonical visual result.

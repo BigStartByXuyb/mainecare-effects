@@ -131,7 +131,9 @@ GlassBackdrop(image = backdropBitmap) {
 Presets are `Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`; `LiquidGlassParams`
 overrides refraction/radius per surface. Performance tiers, known ceiling and license carriage
 are documented in [`docs/release-0.1.0.md`](docs/release-0.1.0.md). Maven Local was verified
-with a separate Android consumer build; GitHub Packages/JitPack remain follow-ups.
+with a separate Android consumer build; GitHub Packages is published by
+`.github/workflows/publish.yml`. V2528A install/measure/return steps are in
+[`docs/device-acceptance-v2528a.md`](docs/device-acceptance-v2528a.md).
 
 ## Restoration gate
 
