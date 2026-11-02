@@ -1,8 +1,8 @@
-# App adapter contract — proposal
+# App adapter contract — 0.1.0
 
-Status: **proposal, not final**. Do not add a dependency or integrate the library into
-MaineCare until all gate scenes and the V2528A performance run pass and the user accepts
-phase 1.
+Status: **0.1.0 local artifact available; App integration still blocked**. Do not add the
+dependency or integrate into MaineCare until the merged test package is accepted, the stress
+ceiling is accepted, and the V2528A performance run is reviewed.
 
 Date: 2026-11-01. Owner: mainecare-effects session. Consumer: MaineCare Android v21 session.
 
@@ -20,24 +20,24 @@ performance do not, so integration remains blocked:
 - Emulator performance: FAIL (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
   these numbers predate the final material changes and the V2528A device run.
 
-Keep `MaineGlassCard` as the only adapter seam. Do not call `GlassSurface` from page code and
-do not add the effects modules to the app dependency graph yet.
+`MaineGlassCard` is the only adapter seam. Do not call `GlassSurface` from page code and do
+not add the effects modules to the app dependency graph yet.
 
-Dependency form after acceptance (final choice still open):
+Dependency form for the merged test package:
 
-- **Development:** Gradle included build or vendored source modules `:motion`, `:glass`,
-  `:deck` from this repository. This is the lowest-risk way to iterate before publishing.
-- **Distribution (recommended):** private GitHub Packages
-  `com.mainecare.effects:motion:0.1.0`, `:glass:0.1.0`, `:deck:0.1.0` (version 0.1.0 is the
-  first proposed release, subject to the gate). The app adds the repository and credentials.
-- **Fallback:** vendored modules if GitHub Packages access is a problem; the license/NOTICE
-  files must travel with the source.
+- **Current:** Maven Local, `com.mainecare.effects:motion:0.1.0`, `:glass:0.1.0`,
+  `:deck:0.1.0`; publish with `./gradlew publishToMavenLocal`. A separate Android consumer
+  build against Maven Local compiles `MaineGlassCard`, `GlassBackdrop`, `CardDeck` and passes.
+- **Follow-up:** private GitHub Packages or JitPack once credentials/repository policy are
+  agreed; no token is stored in this repository.
+- **Fallback:** Gradle included build or vendored source modules.
 
-No version is published today. PR #1 is the review artifact.
+The license/notice classifier artifacts and `META-INF` copies in the sources jar travel with
+each AAR. See `docs/release-0.1.0.md`.
 
 ## 2. Public surface the adapter may use
 
-Current phase-1 signature (implemented):
+Page wrapper and the only glass seam (implemented in 0.1.0):
 
 ```kotlin
 GlassBackdrop(
@@ -47,24 +47,36 @@ GlassBackdrop(
     content: @Composable BoxScope.() -> Unit,
 )
 
-GlassSurface(
+MaineGlassCard(
     modifier: Modifier = Modifier,
     material: GlassMaterial = MaineGlassMaterials.Card,
     params: LiquidGlassParams = material.liquid,
-    backdrop: GlassBackdropState? = LocalGlassBackdrop.current,
     interactive: Boolean = true,
     contentAlignment: Alignment = Alignment.TopStart,
     content: @Composable BoxScope.() -> Unit,
 )
 ```
 
-Presets: `MaineGlassMaterials.Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`.
+`GlassSurface` remains public for the demo/gate but is not an adapter seam. Presets:
+`MaineGlassMaterials.Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`.
 `LiquidGlassParams` mirrors the React props (`displacementScale`, `blurAmount`, `saturation`,
 `aberrationIntensity`, `elasticity`, `cornerRadius`, `mode`, `overLight`).
 
 The adapter should keep a single mapping from MaineCare theme/state to a preset plus optional
-`params.copy(...)` overrides. It should not use `RuntimeShader`, the raw maps, or
+`params.copy(...)` overrides. It must not use `RuntimeShader`, the raw maps, or
 `GlassBackdropState` internals.
+
+### Performance tiers (0.1.0, no quality switch)
+
+| Tier | Usage |
+| --- | --- |
+| High | 1–3 glass surfaces, static `ImageBitmap` backdrop, `interactive=true`, distinct radii cached |
+| Medium | static cards (`interactive=false`), fewer materials/radii, no backdrop refresh per frame |
+| Low / reduced transparency | not implemented; phase-2 `enabled=false` tint-only fallback |
+
+Do not refresh the backdrop per frame; the blur cache is per rounded radius. Emulator
+performance is diagnostic (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
+V2528A is pending. See `docs/release-0.1.0.md` for the known ceiling and license carriage.
 
 ## 3. Proposed `enabled` / `quality` and reduced-motion/transparency
 

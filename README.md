@@ -1,8 +1,8 @@
 # MaineCare Effects
 
 A reusable Android Compose effects library for MaineCare: liquid glass, card deck, draggable
-card stack and coverflow. Phase 1 is a verifiable spike against the MaineCare feeding v21 web
-reference; it is **not** wired into the MaineCare app yet.
+card stack and coverflow. Version **0.1.0** is published to Maven Local as a consumable
+artifact; the MaineCare App is **not** wired to it yet.
 
 ## Modules
 
@@ -39,6 +39,59 @@ adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.dem
 `blurMode=cpu` + `blurScale=<factor>` (offscreen box-Gaussian probe) and `trace=0`
 (disable motion logs).
 
+## 0.1.0 artifact and adapter
+
+Artifacts (Maven Local, AAR):
+
+```
+com.mainecare.effects:motion:0.1.0
+com.mainecare.effects:glass:0.1.0
+com.mainecare.effects:deck:0.1.0
+```
+
+Publish from this checkout:
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+Consumer settings and dependencies:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories { mavenLocal(); google(); mavenCentral() }
+}
+```
+
+```kotlin
+dependencies {
+    implementation("com.mainecare.effects:glass:0.1.0")
+    implementation("com.mainecare.effects:deck:0.1.0")
+    implementation(platform("androidx.compose:compose-bom:2026.03.00"))
+    implementation("androidx.compose.material3:material3")
+}
+```
+
+The only glass seam for the App adapter is `MaineGlassCard`; page code must not construct
+`GlassSurface`, shaders or displacement maps:
+
+```kotlin
+GlassBackdrop(image = backdropBitmap) {
+    MaineGlassCard(
+        modifier = Modifier.fillMaxWidth().height(196.dp),
+        material = MaineGlassMaterials.Advice,
+        interactive = true,
+    ) {
+        content()
+    }
+}
+```
+
+Presets are `Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`; `LiquidGlassParams`
+overrides refraction/radius per surface. Performance tiers, known ceiling and license carriage
+are documented in [`docs/release-0.1.0.md`](docs/release-0.1.0.md). Maven Local was verified
+with a separate Android consumer build; GitHub Packages/JitPack remain follow-ups.
+
 ## Restoration gate
 
 The gate is defined in [`docs/golden-gate.md`](docs/golden-gate.md) and the measured results
@@ -61,9 +114,9 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 
 No document claims a pass that the numbers do not support.
 
-The App adapter contract is a proposal in
-[`docs/app-adapter-contract.md`](docs/app-adapter-contract.md); no dependency or App
-integration exists yet.
+The App adapter contract is in [`docs/app-adapter-contract.md`](docs/app-adapter-contract.md).
+The 0.1.0 artifact exists, but no dependency or App integration exists yet; integration waits
+for the merged test package acceptance.
 
 ## Verification harness
 
