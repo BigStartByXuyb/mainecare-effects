@@ -1,6 +1,9 @@
 name: Publish GitHub Packages
 
 on:
+  push:
+    branches:
+      - release-0.1.0-github-packages
   workflow_dispatch:
   release:
     types: [published]
