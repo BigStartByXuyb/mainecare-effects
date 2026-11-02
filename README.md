@@ -72,6 +72,47 @@ dependencies {
 }
 ```
 
+### GitHub Packages (remote)
+
+The same coordinates are published to:
+
+```
+https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects
+```
+
+Consumer repository:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") // GitHub username
+                password = System.getenv("MAINECARE_EFFECTS_PACKAGES_TOKEN")
+            }
+        }
+        google()
+        mavenCentral()
+    }
+}
+```
+
+Authentication for a **private** package:
+
+- Publishing (this repository): GitHub Actions uses the built-in `GITHUB_TOKEN` with
+  `permissions: packages: write`; no personal token is stored. The workflow is
+  `.github/workflows/publish.yml`.
+- Consuming from another repository or locally: create a token with **Packages: Read-only**
+  for `BigStartByXuyb/mainecare-effects` (fine-grained token) or a classic token with
+  `read:packages`. Store it as the secret `MAINECARE_EFFECTS_PACKAGES_TOKEN` in the consumer
+  repository (or export it locally). Do not commit or paste the token.
+- In consumer GitHub Actions, the consumer repository's own `GITHUB_TOKEN` normally cannot
+  read another private repository's package; use the `MAINECARE_EFFECTS_PACKAGES_TOKEN`
+  secret with `permissions: packages: read` on the consuming job.
+
+Maven Local is the local/offline path; GitHub Packages is the cross-machine path.
+
 The only glass seam for the App adapter is `MaineGlassCard`; page code must not construct
 `GlassSurface`, shaders or displacement maps:
 
