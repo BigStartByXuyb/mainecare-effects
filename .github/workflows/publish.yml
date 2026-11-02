@@ -41,7 +41,7 @@ jobs:
           for artifact in motion glass deck; do
             for file in               "${artifact}-0.1.0.pom"               "${artifact}-0.1.0.aar"               "${artifact}-0.1.0.module"               "${artifact}-0.1.0-sources.jar"               "${artifact}-0.1.0-license.txt"               "${artifact}-0.1.0-notice.txt"               "${artifact}-0.1.0-third-party-notices.md"; do
               url="${base}/${artifact}/0.1.0/${file}"
-              code=$(curl -sS -o /dev/null -w '%{http_code}'                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
+              code=$(curl -sS -L -o /dev/null -w '%{http_code}'                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
               echo "INSPECT ${artifact} ${file} ${code}"
             done
           done
