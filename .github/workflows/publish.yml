@@ -53,9 +53,9 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew \
-            :motion:publishReleasePublicationToGitHubPackagesRepository \
             :glass:publishReleasePublicationToGitHubPackagesRepository \
             :deck:publishReleasePublicationToGitHubPackagesRepository \
+            -x :motion:publishReleasePublicationToGitHubPackagesRepository \
             --no-daemon --console=plain
 
       - name: Verify remote artifacts
