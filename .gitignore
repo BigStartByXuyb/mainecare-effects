@@ -11,3 +11,5 @@ verification/node_modules/
 verification/results/
 verification/frames/
 verification/web-reference/gate-web-*.png
+
+output/

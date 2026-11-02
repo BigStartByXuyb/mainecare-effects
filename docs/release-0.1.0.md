@@ -15,7 +15,23 @@ not modified and no dependency has been added to it.
 `glass` and `deck` depend on `motion` transitively. Compose is exposed as `api` with the
 Compose BOM 2026.03.00; consumers need `android.useAndroidX=true`.
 
-Artifacts are published by `./gradlew publishToMavenLocal` to:
+GitHub Packages remote (cross-machine):
+
+```
+https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects
+com.mainecare.effects:motion:0.1.0
+com.mainecare.effects:glass:0.1.0
+com.mainecare.effects:deck:0.1.0
+```
+
+The remote publish is `.github/workflows/publish.yml` (workflow_dispatch or a published
+release) using `GITHUB_TOKEN` with `permissions: packages: write`; it also verifies the remote
+POM, AAR, module metadata, sources, license, notice and third-party notices. Consumers need a
+token with **Packages: Read-only** (fine-grained) or `read:packages` (classic), stored as the
+consumer secret `MAINECARE_EFFECTS_PACKAGES_TOKEN`; never commit a token. A consumer
+repository's own `GITHUB_TOKEN` normally cannot read another private repository's package.
+
+Artifacts are also published by `./gradlew publishToMavenLocal` to:
 
 ```
 ~/.m2/repository/com/mainecare/effects/{motion,glass,deck}/0.1.0/
@@ -25,9 +41,9 @@ Each version directory contains the AAR, POM, Gradle module metadata, sources ja
 `-license.txt`, `-notice.txt`, `-third-party-notices.md` classifier artifacts. The sources jar
 also carries `META-INF/LICENSE`, `META-INF/NOTICE` and `META-INF/THIRD_PARTY_NOTICES.md`.
 
-Maven Local is the feasible distribution for the merged test package: it needs no repository
-credentials and was verified with a separate Android consumer build. GitHub Packages/JitPack
-remain follow-ups; no token or credential is stored in the repository.
+Maven Local was verified with a separate Android consumer build and needs no credentials.
+GitHub Packages is the cross-machine path; JitPack remains a follow-up. No token or credential
+is stored in the repository.
 
 ## Consumption
 
@@ -164,6 +180,19 @@ this ceiling; see `docs/golden-gate.md` for the full control matrix.
 - Haze, Cloudy, AndroidLiquidGlass and NadeemIqbal/liquid-glass were reviewed for design only;
   no source was copied.
 - No test accounts, credentials or personal data are stored in the artifact or repository.
+
+## V2528A acceptance
+
+The demo APK for device acceptance is built outside the repository:
+
+```
+output/mainecare-effects-demo-0.1.0-debug.apk
+sha256 906b59bed31bcdcce3b23bd868ffed9035de0737f40f52fa949660b1f4f5b3d4
+```
+
+Install, cold-start, gfxinfo and meminfo steps are in `docs/device-acceptance-v2528a.md` and
+`verification/device-perf.sh`. V2528A is not connected in this workspace; the device run is
+blocked on USB access. Emulator numbers are diagnostic only.
 
 ## Acceptance sequence
 

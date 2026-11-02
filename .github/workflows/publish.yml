@@ -1,0 +1,92 @@
+name: Publish GitHub Packages
+
+on:
+  push:
+    branches:
+      - release-0.1.0-github-packages
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install Android SDK 36
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDKMANAGER=$(find "$SDK_ROOT" -path '*/bin/sdkmanager' -type f | sort | tail -1)
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
+
+      - name: Inspect existing package assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -u
+          base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
+          for artifact in motion glass deck; do
+            for file in               "${artifact}-0.1.0.pom"               "${artifact}-0.1.0.aar"               "${artifact}-0.1.0.module"               "${artifact}-0.1.0-sources.jar"               "${artifact}-0.1.0-license.txt"               "${artifact}-0.1.0-notice.txt"               "${artifact}-0.1.0-third-party-notices.md"; do
+              url="${base}/${artifact}/0.1.0/${file}"
+              code=$(curl -sS -L -o /dev/null -w '%{http_code}'                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
+              echo "INSPECT ${artifact} ${file} ${code}"
+            done
+          done
+
+      - name: Use CI Gradle memory profile
+        run: cp .github/ci-gradle.properties gradle.properties
+
+      - name: Publish 0.1.0
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          chmod +x ./gradlew
+          set -euo pipefail
+          base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
+          check() {
+            curl -sS -L -o /dev/null -w '%{http_code}'               -H "Authorization: Bearer ${GITHUB_TOKEN}" "$1"
+          }
+          if [ "$(check "${base}/motion/0.1.0/motion-0.1.0.pom")" = "200" ] &&              [ "$(check "${base}/glass/0.1.0/glass-0.1.0.pom")" = "200" ] &&              [ "$(check "${base}/deck/0.1.0/deck-0.1.0.pom")" = "200" ]; then
+            echo "All 0.1.0 POMs already exist; skipping publish."
+          else
+            ./gradlew               :glass:publishReleasePublicationToGitHubPackagesRepository               :deck:publishReleasePublicationToGitHubPackagesRepository               -x :motion:publishReleasePublicationToGitHubPackagesRepository               --no-daemon --console=plain
+          fi
+
+      - name: Verify remote artifacts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
+          for artifact in motion glass deck; do
+            for file in \
+              "${artifact}-0.1.0.pom" \
+              "${artifact}-0.1.0.aar" \
+              "${artifact}-0.1.0.module" \
+              "${artifact}-0.1.0-sources.jar" \
+              "${artifact}-0.1.0-license.txt" \
+              "${artifact}-0.1.0-notice.txt" \
+              "${artifact}-0.1.0-third-party-notices.md"; do
+              url="${base}/${artifact}/0.1.0/${file}"
+              code=$(curl -sS -L -o /dev/null -w '%{http_code}' \
+                -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
+              echo "${artifact} ${file} ${code}"
+              test "${code}" = "200"
+            done
+          done

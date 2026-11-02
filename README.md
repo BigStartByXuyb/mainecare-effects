@@ -72,6 +72,47 @@ dependencies {
 }
 ```
 
+### GitHub Packages (remote)
+
+The same coordinates are published to:
+
+```
+https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects
+```
+
+Consumer repository:
+
+```kotlin
+dependencyResolutionManagement {
+    repositories {
+        maven {
+            url = uri("https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR") // GitHub username
+                password = System.getenv("MAINECARE_EFFECTS_PACKAGES_TOKEN")
+            }
+        }
+        google()
+        mavenCentral()
+    }
+}
+```
+
+Authentication for a **private** package:
+
+- Publishing (this repository): GitHub Actions uses the built-in `GITHUB_TOKEN` with
+  `permissions: packages: write`; no personal token is stored. The workflow is
+  `.github/workflows/publish.yml`.
+- Consuming from another repository or locally: create a token with **Packages: Read-only**
+  for `BigStartByXuyb/mainecare-effects` (fine-grained token) or a classic token with
+  `read:packages`. Store it as the secret `MAINECARE_EFFECTS_PACKAGES_TOKEN` in the consumer
+  repository (or export it locally). Do not commit or paste the token.
+- In consumer GitHub Actions, the consumer repository's own `GITHUB_TOKEN` normally cannot
+  read another private repository's package; use the `MAINECARE_EFFECTS_PACKAGES_TOKEN`
+  secret with `permissions: packages: read` on the consuming job.
+
+Maven Local is the local/offline path; GitHub Packages is the cross-machine path.
+
 The only glass seam for the App adapter is `MaineGlassCard`; page code must not construct
 `GlassSurface`, shaders or displacement maps:
 
@@ -90,7 +131,9 @@ GlassBackdrop(image = backdropBitmap) {
 Presets are `Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`; `LiquidGlassParams`
 overrides refraction/radius per surface. Performance tiers, known ceiling and license carriage
 are documented in [`docs/release-0.1.0.md`](docs/release-0.1.0.md). Maven Local was verified
-with a separate Android consumer build; GitHub Packages/JitPack remain follow-ups.
+with a separate Android consumer build; GitHub Packages is published by
+`.github/workflows/publish.yml`. V2528A install/measure/return steps are in
+[`docs/device-acceptance-v2528a.md`](docs/device-acceptance-v2528a.md).
 
 ## Restoration gate
 
@@ -105,7 +148,8 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
   Obsidian: **FAIL SSIM** (0.9915). The residual is the card shadow on the shared CSS stage
   behind the pill plus the pill’s blurred-alpha composition; the offscreen CPU
   box-Gaussian attempt reached 0.99324 / 0.99167, confirming the kernel is not the limiter.
-  See the comparison report.
+  The measured ceiling for the static-backdrop/per-surface-shadow path is **≈0.994**;
+  see the comparison report and [`docs/release-0.1.0.md`](docs/release-0.1.0.md).
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
 - Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;
@@ -134,7 +178,9 @@ for the merged test package acceptance.
 
 Project code is Apache-2.0 (`LICENSE`). Displacement maps and filter math are derived from
 liquid-glass-react 1.1.1 (MIT); see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
-`third_party/licenses/`. The reviewed Apache-2.0 projects (Haze, Cloudy, AndroidLiquidGlass,
+`third_party/licenses/`. Every Maven artifact publishes `-license.txt`, `-notice.txt` and
+`-third-party-notices.md` classifiers, and the sources jar carries the same files under
+`META-INF/`. The reviewed Apache-2.0 projects (Haze, Cloudy, AndroidLiquidGlass,
 NadeemIqbal/liquid-glass) contributed design review only; no code was copied.
 
 No test accounts, credentials, or personal data are stored in this repository. The demo

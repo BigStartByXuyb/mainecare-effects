@@ -45,6 +45,16 @@ version = "0.1.0"
 
 afterEvaluate {
     publishing {
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = uri("https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects")
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+        }
         publications {
             create<MavenPublication>("release") {
                 from(components["release"])
