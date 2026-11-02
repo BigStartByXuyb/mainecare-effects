@@ -31,6 +31,21 @@ jobs:
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 
+      - name: Inspect existing package assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: |
+          set -u
+          base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
+          for artifact in motion glass deck; do
+            for file in               "${artifact}-0.1.0.pom"               "${artifact}-0.1.0.aar"               "${artifact}-0.1.0.module"               "${artifact}-0.1.0-sources.jar"               "${artifact}-0.1.0-license.txt"               "${artifact}-0.1.0-notice.txt"               "${artifact}-0.1.0-third-party-notices.md"; do
+              url="${base}/${artifact}/0.1.0/${file}"
+              code=$(curl -sS -o /dev/null -w '%{http_code}'                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
+              echo "INSPECT ${artifact} ${file} ${code}"
+            done
+          done
+
       - name: Publish 0.1.0
         env:
           GITHUB_ACTOR: ${{ github.actor }}
