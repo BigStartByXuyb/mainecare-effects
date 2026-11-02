@@ -53,13 +53,19 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
         run: |
           chmod +x ./gradlew
-          ./gradlew \
-            :glass:publishReleasePublicationToGitHubPackagesRepository \
-            :deck:publishReleasePublicationToGitHubPackagesRepository \
-            -x :motion:publishReleasePublicationToGitHubPackagesRepository \
-            --no-daemon --console=plain
+          set -euo pipefail
+          base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
+          check() {
+            curl -sS -L -o /dev/null -w '%{http_code}'               -H "Authorization: Bearer ${GITHUB_TOKEN}" "$1"
+          }
+          if [ "$(check "${base}/motion/0.1.0/motion-0.1.0.pom")" = "200" ] &&              [ "$(check "${base}/glass/0.1.0/glass-0.1.0.pom")" = "200" ] &&              [ "$(check "${base}/deck/0.1.0/deck-0.1.0.pom")" = "200" ]; then
+            echo "All 0.1.0 POMs already exist; skipping publish."
+          else
+            ./gradlew               :glass:publishReleasePublicationToGitHubPackagesRepository               :deck:publishReleasePublicationToGitHubPackagesRepository               -x :motion:publishReleasePublicationToGitHubPackagesRepository               --no-daemon --console=plain
+          fi
 
       - name: Verify remote artifacts
         env:
@@ -78,7 +84,7 @@ jobs:
               "${artifact}-0.1.0-notice.txt" \
               "${artifact}-0.1.0-third-party-notices.md"; do
               url="${base}/${artifact}/0.1.0/${file}"
-              code=$(curl -sS -o /dev/null -w '%{http_code}' \
+              code=$(curl -sS -L -o /dev/null -w '%{http_code}' \
                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
               echo "${artifact} ${file} ${code}"
               test "${code}" = "200"
