@@ -1,0 +1,15 @@
+{
+  "left": "verification/upstream-demo/android-ab-upstream-light-390.png",
+  "right": "verification/upstream-demo/upstream-light-390-bb.png",
+  "width": 975,
+  "height": 2110,
+  "meanAbsoluteError": 2.723485397172601,
+  "rmse": 10.843795693909101,
+  "psnr": 27.42717707832231,
+  "ssim": 0.9766721250451316,
+  "maxChannelDiff": 192,
+  "percentOver2": 23.529468951269898,
+  "percentOver5": 16.42960262486329,
+  "percentOver10": 11.476193948231863,
+  "percentOver20": 6.660979462875198
+}

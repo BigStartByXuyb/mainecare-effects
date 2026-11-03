@@ -1,7 +1,7 @@
 # MaineCare Effects
 
 A reusable Android Compose effects library for MaineCare: liquid glass, card deck, draggable
-card stack and coverflow. Version **0.1.0** is published to Maven Local as a consumable
+card stack and coverflow. Version **0.1.1** is published to Maven Local as a consumable
 artifact; the MaineCare App is **not** wired to it yet.
 
 ## Modules
@@ -39,14 +39,14 @@ adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.dem
 `blurMode=cpu` + `blurScale=<factor>` (offscreen box-Gaussian probe) and `trace=0`
 (disable motion logs).
 
-## 0.1.0 artifact and adapter
+## 0.1.1 artifact and adapter
 
 Artifacts (Maven Local, AAR):
 
 ```
-com.mainecare.effects:motion:0.1.0
-com.mainecare.effects:glass:0.1.0
-com.mainecare.effects:deck:0.1.0
+com.mainecare.effects:motion:0.1.1
+com.mainecare.effects:glass:0.1.1
+com.mainecare.effects:deck:0.1.1
 ```
 
 Publish from this checkout:
@@ -65,8 +65,8 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.mainecare.effects:glass:0.1.0")
-    implementation("com.mainecare.effects:deck:0.1.0")
+    implementation("com.mainecare.effects:glass:0.1.1")
+    implementation("com.mainecare.effects:deck:0.1.1")
     implementation(platform("androidx.compose:compose-bom:2026.03.00"))
     implementation("androidx.compose.material3:material3")
 }
@@ -128,9 +128,11 @@ GlassBackdrop(image = backdropBitmap) {
 }
 ```
 
-Presets are `Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`; `LiquidGlassParams`
-overrides refraction/radius per surface. Performance tiers, known ceiling and license carriage
-are documented in [`docs/release-0.1.0.md`](docs/release-0.1.0.md). Maven Local was verified
+Presets are `Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`, plus
+`Upstream` (liquid-glass-react 1.1.1 source defaults: 70 / .0625 / 140 / 2 / .15 / 999,
+clear glass, 6px blur). `LiquidGlassParams` now defaults to those upstream values; the v21
+presets keep their own values. Performance tiers, known ceiling and license carriage
+are documented in [`docs/release-0.1.1.md`](docs/release-0.1.1.md). Maven Local was verified
 with a separate Android consumer build; GitHub Packages is published by
 `.github/workflows/publish.yml`. V2528A install/measure/return steps are in
 [`docs/device-acceptance-v2528a.md`](docs/device-acceptance-v2528a.md).
@@ -140,16 +142,16 @@ with a separate Android consumer build; GitHub Packages is published by
 The gate is defined in [`docs/golden-gate.md`](docs/golden-gate.md) and the measured results
 are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 
-- Canonical smooth v21 feeding surface, static: **PASS** (SSIM 0.99536, MAE 0.428,
-  99.57% within Δ5; target SSIM ≥0.995, MAE ≤1.0, ≥99% within Δ5).
-- Canonical smooth, displacement: **PASS** (SSIM 0.99531, MAE 0.422, 99.65% within Δ5;
+- Canonical smooth v21 feeding surface, static: **PASS** (SSIM 0.99548, MAE 0.421,
+  99.59% within Δ5; target SSIM ≥0.995, MAE ≤1.0, ≥99% within Δ5).
+- Canonical smooth, displacement: **PASS** (SSIM 0.99542, MAE 0.416, 99.65% within Δ5;
   target SSIM ≥0.99, MAE ≤1.5, ≥98% within Δ5).
 - Photo stress scene: **FAIL SSIM only** (SSIM 0.9932, MAE 0.796, Δ5 passes); veined
   Obsidian: **FAIL SSIM** (0.9915). The residual is the card shadow on the shared CSS stage
   behind the pill plus the pill’s blurred-alpha composition; the offscreen CPU
   box-Gaussian attempt reached 0.99324 / 0.99167, confirming the kernel is not the limiter.
   The measured ceiling for the static-backdrop/per-surface-shadow path is **≈0.994**;
-  see the comparison report and [`docs/release-0.1.0.md`](docs/release-0.1.0.md).
+  see the comparison report and [`docs/release-0.1.1.md`](docs/release-0.1.1.md).
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
 - Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;
@@ -159,8 +161,23 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 No document claims a pass that the numbers do not support.
 
 The App adapter contract is in [`docs/app-adapter-contract.md`](docs/app-adapter-contract.md).
-The 0.1.0 artifact exists, but no dependency or App integration exists yet; integration waits
+The 0.1.1 artifact exists, but no dependency or App integration exists yet; integration waits
 for the merged test package acceptance.
+
+## Upstream A/B
+
+The demo can render the real liquid-glass-react source defaults next to v21:
+
+```bash
+adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.demo.MainActivity \
+  --es screen ab --es bg dark
+```
+
+`screen=ab` is upstream (left) / v21 (right); `ab-upstream` and `ab-v21` render one full card.
+`bg=dark|light|color|flat|line`, `dispScale`, and `blurScale` are diagnostics. The upstream
+preset is not a v21 parameter tweak: it uses the verified source defaults and clear rim.
+The measured comparison, remaining edge differences, and platform limits are in
+[`docs/upstream-ab-0.1.1.md`](docs/upstream-ab-0.1.1.md).
 
 ## Verification harness
 

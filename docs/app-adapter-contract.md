@@ -1,18 +1,18 @@
-# App adapter contract — 0.1.0
+# App adapter contract — 0.1.1
 
-Status: **0.1.0 local artifact available; App integration still blocked**. Do not add the
+Status: **0.1.1 artifact available (Maven Local + GitHub Packages); App integration still blocked**. Do not add the
 dependency or integrate into MaineCare until the merged test package is accepted, the stress
 ceiling is accepted, and the V2528A performance run is reviewed.
 
-Date: 2026-11-01. Owner: mainecare-effects session. Consumer: MaineCare Android v21 session.
+Date: 2026-11-03. Owner: mainecare-effects session. Consumer: MaineCare Android v21 session.
 
 ## 1. Gate status and dependency form
 
 The canonical smooth v21 feeding surface now passes; the stress scenes and device
 performance do not, so integration remains blocked:
 
-- Canonical static material: PASS (SSIM 0.99536, MAE 0.428, 0.429% above Δ5).
-- Canonical displacement: PASS (SSIM 0.99531, MAE 0.422, 0.355% above Δ5).
+- Canonical static material: PASS (SSIM 0.99548, MAE 0.421, 0.414% above Δ5).
+- Canonical displacement: PASS (SSIM 0.99542, MAE 0.416, 0.346% above Δ5).
 - Photo stress scene: FAIL SSIM only (0.99318; MAE 0.796 and Δ5 pass); veined Obsidian FAIL
   SSIM (0.99147). The residual is the card shadow on the shared CSS stage behind the pill and
   the pill’s blurred-alpha composition; the static-backdrop ceiling is about 0.994.
@@ -25,19 +25,20 @@ not add the effects modules to the app dependency graph yet.
 
 Dependency form for the merged test package:
 
-- **Current:** Maven Local, `com.mainecare.effects:motion:0.1.0`, `:glass:0.1.0`,
-  `:deck:0.1.0`; publish with `./gradlew publishToMavenLocal`. A separate Android consumer
-  build against Maven Local compiles `MaineGlassCard`, `GlassBackdrop`, `CardDeck` and passes.
-- **Follow-up:** private GitHub Packages or JitPack once credentials/repository policy are
-  agreed; no token is stored in this repository.
+- **Current:** `com.mainecare.effects:motion:0.1.1`, `:glass:0.1.1`, `:deck:0.1.1`, in Maven
+  Local (`./gradlew publishToMavenLocal`) and GitHub Packages
+  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0 remote verified,
+  0.1.1 run recorded in the PR). A separate Android consumer build against Maven Local
+  compiles `MaineGlassCard`, `GlassBackdrop`, `CardDeck` and passes.
+- **Fallback:** Gradle included build or vendored source modules.
 - **Fallback:** Gradle included build or vendored source modules.
 
 The license/notice classifier artifacts and `META-INF` copies in the sources jar travel with
-each AAR. See `docs/release-0.1.0.md`.
+each AAR. See `docs/release-0.1.1.md`.
 
 ## 2. Public surface the adapter may use
 
-Page wrapper and the only glass seam (implemented in 0.1.0):
+Page wrapper and the only glass seam:
 
 ```kotlin
 GlassBackdrop(
@@ -58,7 +59,9 @@ MaineGlassCard(
 ```
 
 `GlassSurface` remains public for the demo/gate but is not an adapter seam. Presets:
-`MaineGlassMaterials.Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`.
+`MaineGlassMaterials.Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`, plus
+`Upstream` (liquid-glass-react 1.1.1 source defaults: 70 / .0625 / 140 / 2 / .15 / 999,
+clear glass, 6px blur; v21 presets keep their own values).
 `LiquidGlassParams` mirrors the React props (`displacementScale`, `blurAmount`, `saturation`,
 `aberrationIntensity`, `elasticity`, `cornerRadius`, `mode`, `overLight`).
 
@@ -66,7 +69,7 @@ The adapter should keep a single mapping from MaineCare theme/state to a preset 
 `params.copy(...)` overrides. It must not use `RuntimeShader`, the raw maps, or
 `GlassBackdropState` internals.
 
-### Performance tiers (0.1.0, no quality switch)
+### Performance tiers (0.1.1, no quality switch)
 
 | Tier | Usage |
 | --- | --- |
@@ -76,7 +79,9 @@ The adapter should keep a single mapping from MaineCare theme/state to a preset 
 
 Do not refresh the backdrop per frame; the blur cache is per rounded radius. Emulator
 performance is diagnostic (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
-V2528A is pending. See `docs/release-0.1.0.md` for the known ceiling and license carriage.
+V2528A is pending. See `docs/release-0.1.1.md` for the known ceiling and license carriage;
+the upstream A/B comparison and its remaining edge differences are in
+`docs/upstream-ab-0.1.1.md`.
 
 ## 3. Proposed `enabled` / `quality` and reduced-motion/transparency
 
