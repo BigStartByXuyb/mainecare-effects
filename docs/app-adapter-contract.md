@@ -27,8 +27,8 @@ Dependency form for the merged test package:
 
 - **Current:** `com.mainecare.effects:motion:0.1.1`, `:glass:0.1.1`, `:deck:0.1.1`, in Maven
   Local (`./gradlew publishToMavenLocal`) and GitHub Packages
-  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0 remote verified,
-  0.1.1 run recorded in the PR). A separate Android consumer build against Maven Local
+  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0 and 0.1.1 remote
+  verified by runs `41600381301` / `41601485086`). A separate Android consumer build against Maven Local
   compiles `MaineGlassCard`, `GlassBackdrop`, `CardDeck` and passes.
 - **Fallback:** Gradle included build or vendored source modules.
 - **Fallback:** Gradle included build or vendored source modules.

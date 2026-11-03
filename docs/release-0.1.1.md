@@ -18,8 +18,9 @@ Maven Local: `./gradlew publishToMavenLocal` →
 GitHub Packages:
 `https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`
 (`.github/workflows/publish.yml`, `permissions: packages: write`, verifies POM/AAR/module/
-sources/license/notice/third-party-notices remotely). The 0.1.1 workflow run is recorded in
-the PR; the 0.1.0 run confirmed the workflow path.
+sources/license/notice/third-party-notices remotely). Runs `41600381301` (branch) and
+`41601485086` (merge commit) passed and verified all 21 assets; the PR is
+https://github.com/BigStartByXuyb/mainecare-effects/pull/4.
 
 Consumer auth is unchanged: a token with **Packages: Read-only** (fine-grained) or
 `read:packages` (classic), stored as `MAINECARE_EFFECTS_PACKAGES_TOKEN` in the consumer.
