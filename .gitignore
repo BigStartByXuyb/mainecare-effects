@@ -13,3 +13,8 @@ verification/frames/
 verification/web-reference/gate-web-*.png
 
 output/
+verification/upstream-demo/bundle.js
+verification/upstream-demo/android-*.png
+verification/upstream-demo/upstream-*.png
+verification/upstream-demo/map-probe*.png
+verification/upstream-demo/ab-*-side*.png

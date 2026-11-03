@@ -32,6 +32,7 @@ uniform float uBeforeLayer;
 uniform float uBeforeStrength;
 uniform float uDensity;
 uniform float uBlurSigma;
+uniform float uOpaqueWarp;
 uniform float uInset;
 uniform float2 uWarpSize;
 uniform float2 uSceneOrigin;
@@ -157,8 +158,6 @@ half4 main(float2 coord) {
         oG = raw * k * (1.0 - uAberration * 0.05);
         oB = raw * k * (1.0 - uAberration * 0.10);
     } else {
-        // The SVG filter region is 170% of the element and feImage slices the square map
-        // to cover it, so only the centered strip of the map reaches the element.
         float2 filterSize = uWarpSize * 1.7;
         float side = max(filterSize.x, filterSize.y);
         float2 mapWindow = (filterSize / side) * (1.0 / 1.7);
@@ -192,7 +191,11 @@ half4 main(float2 coord) {
         // The SVG chain screen-blends three channel layers whose source alpha is the
         // blurred rect alpha. A short element (the v21 pill) is semi-transparent, so the
         // screen composite darkens it over the stage; a tall card stays opaque.
-        float warpA = warpAlpha(warpCoord, uWarpSize, uBlurSigma);
+        float warpA = mix(
+            warpAlpha(warpCoord, uWarpSize, uBlurSigma),
+            1.0,
+            uOpaqueWarp
+        );
         float twoLayers = 1.0 - (1.0 - warpA) * (1.0 - warpA);
         float outA = 1.0 - (1.0 - twoLayers) * (1.0 - warpA);
         float3 premul = float3(warpA * crF.r, warpA * cgF.g, warpA * cbF.b);
