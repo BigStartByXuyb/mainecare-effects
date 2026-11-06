@@ -1,3 +1,6 @@
+> Historical 0.1.1 comparison. The 0.1.3 audit (`docs/liquid-glass-0.1.3.md`) supersedes it:
+> 0.1.1 used 6px blur for the overLight path, while the source formula is 14px.
+
 # Upstream A/B — liquid-glass-react 1.1.1 vs 0.1.1
 
 This is the strict “does it look like the upstream demo” comparison requested after the

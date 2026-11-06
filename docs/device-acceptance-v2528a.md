@@ -6,8 +6,8 @@ pass. The MaineCare App is not modified; this uses the standalone demo APK.
 ## Artifact
 
 ```
-output/mainecare-effects-demo-0.1.1-debug.apk
-sha256 2a99b7e574a475e1fe58e464167636cb0e72212c46376c1fb1dbea1fc480d64c
+output/mainecare-effects-demo-0.1.3-debug.apk
+sha256 07085110d9f37440448b2f9eadac888c0058cfb6c22d55f0eb9ab28b88eb716a
 ```
 
 The APK is generated from `:demo:assembleDebug` and is not committed (`output/` is ignored).
@@ -17,7 +17,7 @@ The device must run Android 13+ (API 33) for AGSL.
 
 ```bash
 adb devices -l
-adb -s <V2528A-serial> install -r output/mainecare-effects-demo-0.1.1-debug.apk
+adb -s <V2528A-serial> install -r output/mainecare-effects-demo-0.1.3-debug.apk
 ```
 
 If the device is not listed: enable Developer options → USB debugging, authorize the RSA
@@ -40,8 +40,9 @@ PKG=com.mainecare.effects.demo.debug
 adb -s <serial> shell am force-stop $PKG
 adb -s <serial> shell am start -W -n $PKG/com.mainecare.effects.demo.MainActivity \
   --es screen glass
+# default launch is the liquid showcase; v21: --es screen obsidian
 # repeat with --es screen deck
-# visual A/B (upstream left, v21 right): --es screen ab --es bg dark
+# visual A/B (upstream left, v21 right): --es screen ab --es bg light
 adb -s <serial> shell dumpsys gfxinfo $PKG reset
 # perform card switches / swipes for 10 seconds
 adb -s <serial> shell dumpsys gfxinfo $PKG > output/device/gfxinfo.txt

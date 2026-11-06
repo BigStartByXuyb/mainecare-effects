@@ -145,9 +145,9 @@ the sheen by `elasticity * 0.1` in UV space.
 6. **Deck snap behavior.** `CardDeck` delegates snapping to Pager, whose fling curve is not
    Embla's. The per-page transform is exact; the snap duration is reported as a difference.
 
-## 0.1.1 packaging
+## 0.1.3 packaging
 
-- Artifacts: `com.mainecare.effects:motion:0.1.1`, `:glass:0.1.1`, `:deck:0.1.1`, in Maven
+- Artifacts: `com.mainecare.effects:motion:0.1.3`, `:glass:0.1.3`, `:deck:0.1.3`, in Maven
   Local (`./gradlew publishToMavenLocal`) and GitHub Packages
   (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`). Each version directory has the AAR, POM,
   Gradle module metadata, sources jar, and license/notice classifier artifacts. The sources
@@ -156,11 +156,12 @@ the sheen by `elasticity * 0.1` in UV space.
   and the Gradle metadata carries the platform constraint.
 - A separate Android consumer build against Maven Local compiles `MaineGlassCard`,
   `GlassBackdrop` and `CardDeck`. The MaineCare App is not modified.
-- GitHub Packages is live for 0.1.0 (remote verified) and 0.1.1 (workflow recorded in the
-  PR); JitPack remains a follow-up; no credentials are stored.
+- GitHub Packages is live for 0.1.0/0.1.1 and 0.1.3 (workflow on `release-0.1.3`); JitPack configuration is present;
+  no credentials are stored.
 - App integration goes through `MaineGlassCard` only; `GlassSurface` stays a demo/gate seam.
-  See `docs/release-0.1.1.md` for the adapter API, performance tiers, known ceiling and
-  license carriage, and `docs/upstream-ab-0.1.1.md` for the liquid-glass-react A/B.
+  See `docs/release-0.1.3.md` for the adapter API, performance tiers, known ceiling and
+  license carriage, and `docs/liquid-glass-0.1.3.md` for the liquid-glass rendering audit
+  and the real liquid-glass-react A/B.
 
 ## Verification assets
 

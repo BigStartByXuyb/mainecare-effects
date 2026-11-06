@@ -1,5 +1,6 @@
 package com.mainecare.effects.demo
 
+import android.app.Activity
 import android.os.Bundle
 import android.util.Log
 import androidx.core.view.WindowCompat
@@ -26,6 +27,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +48,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val initialScreen = intent.getStringExtra("screen")
-        if (initialScreen?.startsWith("ab") == true) {
+        if (initialScreen?.startsWith("ab") == true || initialScreen == "liquid" || initialScreen == "gate") {
             WindowCompat.getInsetsController(window, window.decorView).apply {
                 hide(WindowInsetsCompat.Type.systemBars())
                 systemBarsBehavior =
@@ -53,10 +56,11 @@ class MainActivity : ComponentActivity() {
             }
         }
         val abBg = intent.getStringExtra("bg")
-        val abLight = abBg == "light"
+        val abLight = abBg == "light" || abBg == "showcase"
         val abFlat = abBg == "flat"
         val abLine = abBg == "line"
         val abColor = abBg == "color"
+        val abShowcase = abBg == "showcase"
         val gateDispScale = intent.getStringExtra("dispScale")?.toFloatOrNull() ?: 70f
         val displacement = intent.getStringExtra("displacement") != "0"
         val gateText = intent.getStringExtra("text") == "1"
@@ -101,6 +105,7 @@ class MainActivity : ComponentActivity() {
                     abFlat = abFlat,
                     abLine = abLine,
                     abColor = abColor,
+                    abShowcase = abShowcase,
                     gateDispScale = gateDispScale,
                     abBlurSigmaScale = gateBlurSigmaScale,
                     gateBackground = gateBackground,
@@ -132,6 +137,7 @@ private fun DemoRoot(
     abFlat: Boolean,
     abLine: Boolean,
     abColor: Boolean,
+    abShowcase: Boolean,
     gateDispScale: Float,
     abBlurSigmaScale: Float,
 ) {
@@ -146,6 +152,7 @@ private fun DemoRoot(
             flat = abFlat,
             line = abLine,
             color = abColor,
+            showcase = abShowcase,
             blurSigmaScale = abBlurSigmaScale,
         )
         return
@@ -169,24 +176,40 @@ private fun DemoRoot(
         return
     }
     var tab by rememberSaveable {
-        mutableIntStateOf(if (initialScreen == "deck") 1 else 0)
+        mutableIntStateOf(
+            when (initialScreen) {
+                "deck" -> 2
+                "obsidian", "v21", "gallery" -> 1
+                else -> 0
+            },
+        )
+    }
+    val liquidTab = tab == 0
+    val view = LocalView.current
+    SideEffect {
+        val window = (view.context as Activity).window
+        WindowCompat.getInsetsController(window, view).apply {
+            isAppearanceLightStatusBars = liquidTab
+            isAppearanceLightNavigationBars = liquidTab
+        }
     }
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Obsidian.Bg)
+            .background(if (liquidTab) Color(0xFFFBF6EE) else Obsidian.Bg)
             .windowInsetsPadding(WindowInsets.safeDrawing),
     ) {
-        DemoHeader(tab) { tab = it }
+        DemoHeader(tab, liquidTab) { tab = it }
         when (tab) {
-            0 -> GlassGalleryScreen()
+            0 -> LiquidShowcaseScreen()
+            1 -> GlassGalleryScreen()
             else -> DeckLabScreen()
         }
     }
 }
 
 @Composable
-private fun DemoHeader(tab: Int, onTab: (Int) -> Unit) {
+private fun DemoHeader(tab: Int, light: Boolean, onTab: (Int) -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -198,34 +221,41 @@ private fun DemoHeader(tab: Int, onTab: (Int) -> Unit) {
                 text = "MAINECARE",
                 fontSize = 9.sp,
                 letterSpacing = 2.6.sp,
-                color = Obsidian.Faint,
+                color = if (light) LiquidInk.Faint else Obsidian.Faint,
             )
             Text(
                 text = "Effects Lab",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Obsidian.Fg,
+                color = if (light) LiquidInk.Fg else Obsidian.Fg,
             )
         }
-        TabButton("GLASS", tab == 0) { onTab(0) }
-        Spacer(Modifier.width(6.dp))
-        TabButton("DECK", tab == 1) { onTab(1) }
+        TabButton("LIQUID", tab == 0, light) { onTab(0) }
+        Spacer(Modifier.width(5.dp))
+        TabButton("V21", tab == 1, light) { onTab(1) }
+        Spacer(Modifier.width(5.dp))
+        TabButton("DECK", tab == 2, light) { onTab(2) }
     }
 }
 
 @Composable
-private fun TabButton(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun TabButton(label: String, selected: Boolean, light: Boolean, onClick: () -> Unit) {
     val shape = RoundedCornerShape(999.dp)
+    val selectedColor = if (light) LiquidInk.Fg else Obsidian.Gold
+    val idleColor = if (light) LiquidInk.Faint else Obsidian.Faint
+    val selectedFill = if (light) LiquidInk.Tint else Color(0x1FE3C08A)
+    val selectedBorder = if (light) Color(0x4D1A1A1E) else Color(0x66E3C08A)
+    val idleBorder = if (light) LiquidInk.Hair else Obsidian.Hair
     Text(
         text = label,
-        fontSize = 10.sp,
-        letterSpacing = 1.4.sp,
-        color = if (selected) Obsidian.Gold else Obsidian.Faint,
+        fontSize = 9.sp,
+        letterSpacing = 1.1.sp,
+        color = if (selected) selectedColor else idleColor,
         modifier = Modifier
             .clip(shape)
-            .background(if (selected) Color(0x1FE3C08A) else Color.Transparent)
-            .border(1.dp, if (selected) Color(0x66E3C08A) else Obsidian.Hair, shape)
+            .background(if (selected) selectedFill else Color.Transparent)
+            .border(1.dp, if (selected) selectedBorder else idleBorder, shape)
             .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
+            .padding(horizontal = 11.dp, vertical = 7.dp),
     )
 }

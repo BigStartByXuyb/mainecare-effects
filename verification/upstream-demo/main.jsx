@@ -4,7 +4,8 @@ import LiquidGlass from "liquid-glass-react";
 
 const params = new URLSearchParams(location.search);
 const bg = params.get("bg") || "dark";
-const light = bg === "light";
+const light = bg === "light" || bg === "showcase";
+const showcase = bg === "showcase";
 const flat = bg === "flat";
 const line = bg === "line";
 const color = bg === "color";
@@ -53,7 +54,7 @@ function App() {
           position: "absolute",
           inset: 0,
           background: flat ? "#808080" : undefined,
-          backgroundImage: flat ? undefined : line ? "url(ab-line.png)" : color ? "url(ab-color.png)" : `url(${light ? "ab-light.png" : "ab-dark.png"})`,
+          backgroundImage: flat ? undefined : line ? "url(ab-line.png)" : color ? "url(ab-color.png)" : showcase ? "url(showcase.png)" : `url(${light ? "ab-light.png" : "ab-dark.png"})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
