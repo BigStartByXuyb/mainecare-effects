@@ -1,0 +1,18 @@
+name: Set package visibility
+on:
+  workflow_dispatch:
+permissions:
+  packages: write
+jobs:
+  set-public:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Make maven packages public
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          for pkg in com.mainecare.effects.glass com.mainecare.effects.deck com.mainecare.effects.motion; do
+            echo "PATCH $pkg"
+            gh api --method PATCH "/user/packages/maven/$pkg" -f visibility=public || echo "fail $pkg"
+          done
