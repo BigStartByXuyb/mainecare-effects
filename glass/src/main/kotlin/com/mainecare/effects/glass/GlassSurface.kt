@@ -78,14 +78,21 @@ fun GlassSurface(
     val mapBitmap = remember(params.mode) {
         BitmapFactory.decodeResource(context.resources, mapResource(params.mode))
     }
+    // liquid-glass-react derives the CSS blur from blurAmount and overLight; v21 presets keep
+    // their own explicit radius. A zero radius stays zero (diagnostic blur-off).
+    val blurRadiusDp = when {
+        material.blurRadiusDp <= 0f -> 0f
+        material.edgeStyle == GlassEdgeStyle.Upstream -> params.liquidBlurRadiusDp
+        else -> material.blurRadiusDp
+    }
     val blurred by produceState<ImageBitmap?>(
         initialValue = null,
         backdrop,
-        material.blurRadiusDp,
+        blurRadiusDp,
         density.density,
         backdrop?.boundsInRoot,
     ) {
-        value = backdrop?.blurred(material.blurRadiusDp * density.density)
+        value = backdrop?.blurred(blurRadiusDp * density.density)
     }
     val shader = remember { RuntimeShader(LiquidGlassShader.AGSL) }
     val paint = remember { AndroidPaint(AndroidPaint.ANTI_ALIAS_FLAG) }
@@ -167,6 +174,7 @@ fun GlassSurface(
                             material = material,
                             pointer = pointer,
                             debugOutput = debugOutput,
+                            blurRadiusDp = blurRadiusDp,
                             density = density.density,
                         )
                         drawIntoCanvas { canvas ->
@@ -225,6 +233,7 @@ private fun bindShader(
     material: GlassMaterial,
     pointer: Offset,
     debugOutput: Float,
+    blurRadiusDp: Float,
     density: Float,
 ) {
     val bounds = backdrop.boundsInRoot
@@ -277,7 +286,7 @@ private fun bindShader(
     shader.setFloatUniform("uBeforeLayer", if (material.beforeLayer) 1f else 0f)
     shader.setFloatUniform("uBeforeStrength", material.beforeStrength)
     shader.setFloatUniform("uDensity", density)
-    shader.setFloatUniform("uBlurSigma", material.blurRadiusDp * density)
+    shader.setFloatUniform("uBlurSigma", blurRadiusDp * density)
     shader.setFloatUniform(
         "uOpaqueWarp",
         if (material.edgeStyle == GlassEdgeStyle.Upstream) 1f else 0f,

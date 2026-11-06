@@ -1,10 +1,10 @@
-# App adapter contract — 0.1.1
+# App adapter contract — 0.1.3
 
-Status: **0.1.1 artifact available (Maven Local + GitHub Packages); App integration still blocked**. Do not add the
+Status: **0.1.3 artifact available (Maven Local + GitHub Packages); App integration still blocked**. Do not add the
 dependency or integrate into MaineCare until the merged test package is accepted, the stress
 ceiling is accepted, and the V2528A performance run is reviewed.
 
-Date: 2026-11-03. Owner: mainecare-effects session. Consumer: MaineCare Android v21 session.
+Date: 2026-11-06. Owner: mainecare-effects session. Consumer: MaineCare Android v21 session.
 
 ## 1. Gate status and dependency form
 
@@ -25,16 +25,16 @@ not add the effects modules to the app dependency graph yet.
 
 Dependency form for the merged test package:
 
-- **Current:** `com.mainecare.effects:motion:0.1.1`, `:glass:0.1.1`, `:deck:0.1.1`, in Maven
+- **Current:** `com.mainecare.effects:motion:0.1.3`, `:glass:0.1.3`, `:deck:0.1.3`, in Maven
   Local (`./gradlew publishToMavenLocal`) and GitHub Packages
-  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0 and 0.1.1 remote
-  verified by runs `41600381301` / `41601485086`). A separate Android consumer build against Maven Local
+  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0, 0.1.1 and 0.1.3 remote
+  verified by the publish workflow). A separate Android consumer build against Maven Local
   compiles `MaineGlassCard`, `GlassBackdrop`, `CardDeck` and passes.
 - **Fallback:** Gradle included build or vendored source modules.
 - **Fallback:** Gradle included build or vendored source modules.
 
 The license/notice classifier artifacts and `META-INF` copies in the sources jar travel with
-each AAR. See `docs/release-0.1.1.md`.
+each AAR. See `docs/release-0.1.3.md`.
 
 ## 2. Public surface the adapter may use
 
@@ -61,7 +61,8 @@ MaineGlassCard(
 `GlassSurface` remains public for the demo/gate but is not an adapter seam. Presets:
 `MaineGlassMaterials.Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`, plus
 `Upstream` (liquid-glass-react 1.1.1 source defaults: 70 / .0625 / 140 / 2 / .15 / 999,
-clear glass, 6px blur; v21 presets keep their own values).
+clear glass; blur is 6px dark and 14px with overLight, per the source formula; v21 presets keep
+their own values).
 `LiquidGlassParams` mirrors the React props (`displacementScale`, `blurAmount`, `saturation`,
 `aberrationIntensity`, `elasticity`, `cornerRadius`, `mode`, `overLight`).
 
@@ -69,7 +70,7 @@ The adapter should keep a single mapping from MaineCare theme/state to a preset 
 `params.copy(...)` overrides. It must not use `RuntimeShader`, the raw maps, or
 `GlassBackdropState` internals.
 
-### Performance tiers (0.1.1, no quality switch)
+### Performance tiers (0.1.3, no quality switch)
 
 | Tier | Usage |
 | --- | --- |
@@ -79,9 +80,9 @@ The adapter should keep a single mapping from MaineCare theme/state to a preset 
 
 Do not refresh the backdrop per frame; the blur cache is per rounded radius. Emulator
 performance is diagnostic (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
-V2528A is pending. See `docs/release-0.1.1.md` for the known ceiling and license carriage;
-the upstream A/B comparison and its remaining edge differences are in
-`docs/upstream-ab-0.1.1.md`.
+V2528A is pending. See `docs/release-0.1.3.md` for the known ceiling and license carriage;
+the liquid-glass audit and its remaining edge differences are in
+`docs/liquid-glass-0.1.3.md`.
 
 ## 3. Proposed `enabled` / `quality` and reduced-motion/transparency
 

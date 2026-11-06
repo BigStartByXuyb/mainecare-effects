@@ -35,6 +35,7 @@ fun AbScreen(
     flat: Boolean = false,
     line: Boolean = false,
     color: Boolean = false,
+    showcase: Boolean = false,
     blurSigmaScale: Float = 1.4f,
 ) {
     val backdrop = rememberBackdropAsset(
@@ -42,6 +43,7 @@ fun AbScreen(
             line -> "ab-line.png"
             color -> "ab-color.png"
             flat -> "ab-flat.png"
+            showcase -> "showcase.png"
             light -> "ab-light.png"
             else -> "ab-dark.png"
         },
