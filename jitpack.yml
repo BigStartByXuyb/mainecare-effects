@@ -1,0 +1,4 @@
+jdk:
+  - openjdk17
+before_install:
+  - sdkmanager --licenses || true
