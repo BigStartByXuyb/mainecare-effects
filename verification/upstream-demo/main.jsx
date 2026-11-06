@@ -6,6 +6,7 @@ const params = new URLSearchParams(location.search);
 const bg = params.get("bg") || "dark";
 const light = bg === "light" || bg === "showcase";
 const showcase = bg === "showcase";
+const photo = bg === "photo";
 const flat = bg === "flat";
 const line = bg === "line";
 const color = bg === "color";
@@ -17,7 +18,7 @@ if (noBlur) {
   style.textContent = ".glass__warp { backdrop-filter: none !important; }";
   document.head.appendChild(style);
 }
-const overLight = light;
+const overLight = params.has("overlight") ? params.get("overlight") === "1" : light;
 
 function Card() {
   return (
@@ -54,7 +55,7 @@ function App() {
           position: "absolute",
           inset: 0,
           background: flat ? "#808080" : undefined,
-          backgroundImage: flat ? undefined : line ? "url(ab-line.png)" : color ? "url(ab-color.png)" : showcase ? "url(showcase.png)" : `url(${light ? "ab-light.png" : "ab-dark.png"})`,
+          backgroundImage: flat ? undefined : line ? "url(ab-line.png)" : color ? "url(ab-color.png)" : showcase ? "url(showcase.png)" : photo ? "url(photo-beach.jpg)" : `url(${light ? "ab-light.png" : "ab-dark.png"})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}

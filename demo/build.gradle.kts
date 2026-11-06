@@ -14,8 +14,8 @@ android {
         applicationId = "com.mainecare.effects.demo"
         minSdk = 33
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.1.3"
+        versionCode = 4
+        versionName = "0.1.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

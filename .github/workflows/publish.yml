@@ -3,7 +3,7 @@ name: Publish GitHub Packages
 on:
   push:
     branches:
-      - release-0.1.3
+      - release-0.1.4
   workflow_dispatch:
   release:
     types: [published]
@@ -39,8 +39,8 @@ jobs:
           set -u
           base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
           for artifact in motion glass deck; do
-            for file in               "${artifact}-0.1.3.pom"               "${artifact}-0.1.3.aar"               "${artifact}-0.1.3.module"               "${artifact}-0.1.3-sources.jar"               "${artifact}-0.1.3-license.txt"               "${artifact}-0.1.3-notice.txt"               "${artifact}-0.1.3-third-party-notices.md"; do
-              url="${base}/${artifact}/0.1.3/${file}"
+            for file in               "${artifact}-0.1.4.pom"               "${artifact}-0.1.4.aar"               "${artifact}-0.1.4.module"               "${artifact}-0.1.4-sources.jar"               "${artifact}-0.1.4-license.txt"               "${artifact}-0.1.4-notice.txt"               "${artifact}-0.1.4-third-party-notices.md"; do
+              url="${base}/${artifact}/0.1.4/${file}"
               code=$(curl -sS -L -o /dev/null -w '%{http_code}'                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
               echo "INSPECT ${artifact} ${file} ${code}"
             done
@@ -49,7 +49,7 @@ jobs:
       - name: Use CI Gradle memory profile
         run: cp .github/ci-gradle.properties gradle.properties
 
-      - name: Publish 0.1.3
+      - name: Publish 0.1.4
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,8 +61,8 @@ jobs:
           check() {
             curl -sS -L -o /dev/null -w '%{http_code}'               -H "Authorization: Bearer ${GITHUB_TOKEN}" "$1"
           }
-          if [ "$(check "${base}/motion/0.1.3/motion-0.1.3.pom")" = "200" ] &&              [ "$(check "${base}/glass/0.1.3/glass-0.1.3.pom")" = "200" ] &&              [ "$(check "${base}/deck/0.1.3/deck-0.1.3.pom")" = "200" ]; then
-            echo "All 0.1.3 POMs already exist; skipping publish."
+          if [ "$(check "${base}/motion/0.1.4/motion-0.1.4.pom")" = "200" ] &&              [ "$(check "${base}/glass/0.1.4/glass-0.1.4.pom")" = "200" ] &&              [ "$(check "${base}/deck/0.1.4/deck-0.1.4.pom")" = "200" ]; then
+            echo "All 0.1.4 POMs already exist; skipping publish."
           else
             ./gradlew               :motion:publishReleasePublicationToGitHubPackagesRepository               :glass:publishReleasePublicationToGitHubPackagesRepository               :deck:publishReleasePublicationToGitHubPackagesRepository               --no-daemon --console=plain
           fi
@@ -76,14 +76,14 @@ jobs:
           base="https://maven.pkg.github.com/${GITHUB_REPOSITORY_OWNER}/mainecare-effects/com/mainecare/effects"
           for artifact in motion glass deck; do
             for file in \
-              "${artifact}-0.1.3.pom" \
-              "${artifact}-0.1.3.aar" \
-              "${artifact}-0.1.3.module" \
-              "${artifact}-0.1.3-sources.jar" \
-              "${artifact}-0.1.3-license.txt" \
-              "${artifact}-0.1.3-notice.txt" \
-              "${artifact}-0.1.3-third-party-notices.md"; do
-              url="${base}/${artifact}/0.1.3/${file}"
+              "${artifact}-0.1.4.pom" \
+              "${artifact}-0.1.4.aar" \
+              "${artifact}-0.1.4.module" \
+              "${artifact}-0.1.4-sources.jar" \
+              "${artifact}-0.1.4-license.txt" \
+              "${artifact}-0.1.4-notice.txt" \
+              "${artifact}-0.1.4-third-party-notices.md"; do
+              url="${base}/${artifact}/0.1.4/${file}"
               code=$(curl -sS -L -o /dev/null -w '%{http_code}' \
                 -H "Authorization: Bearer ${GITHUB_TOKEN}" "${url}")
               echo "${artifact} ${file} ${code}"

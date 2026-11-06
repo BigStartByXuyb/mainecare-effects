@@ -48,7 +48,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val initialScreen = intent.getStringExtra("screen")
-        if (initialScreen?.startsWith("ab") == true || initialScreen == "liquid" || initialScreen == "gate") {
+        if (initialScreen?.startsWith("ab") == true || initialScreen == "liquid" ||
+            initialScreen == "liquid-photo" || initialScreen == "gate"
+        ) {
             WindowCompat.getInsetsController(window, window.decorView).apply {
                 hide(WindowInsetsCompat.Type.systemBars())
                 systemBarsBehavior =
@@ -61,6 +63,9 @@ class MainActivity : ComponentActivity() {
         val abLine = abBg == "line"
         val abColor = abBg == "color"
         val abShowcase = abBg == "showcase"
+        val abPhoto = abBg == "photo"
+        val abOverLight = intent.getStringExtra("overlight")?.let { it == "1" }
+            ?: if (abShowcase || abPhoto) false else null
         val gateDispScale = intent.getStringExtra("dispScale")?.toFloatOrNull() ?: 70f
         val displacement = intent.getStringExtra("displacement") != "0"
         val gateText = intent.getStringExtra("text") == "1"
@@ -106,6 +111,8 @@ class MainActivity : ComponentActivity() {
                     abLine = abLine,
                     abColor = abColor,
                     abShowcase = abShowcase,
+                    abPhoto = abPhoto,
+                    abOverLight = abOverLight,
                     gateDispScale = gateDispScale,
                     abBlurSigmaScale = gateBlurSigmaScale,
                     gateBackground = gateBackground,
@@ -138,6 +145,8 @@ private fun DemoRoot(
     abLine: Boolean,
     abColor: Boolean,
     abShowcase: Boolean,
+    abPhoto: Boolean,
+    abOverLight: Boolean?,
     gateDispScale: Float,
     abBlurSigmaScale: Float,
 ) {
@@ -153,6 +162,8 @@ private fun DemoRoot(
             line = abLine,
             color = abColor,
             showcase = abShowcase,
+            photo = abPhoto,
+            overLightOverride = abOverLight,
             blurSigmaScale = abBlurSigmaScale,
         )
         return
@@ -201,7 +212,10 @@ private fun DemoRoot(
     ) {
         DemoHeader(tab, liquidTab) { tab = it }
         when (tab) {
-            0 -> LiquidShowcaseScreen()
+            0 -> LiquidShowcaseScreen(
+                overLight = abOverLight ?: false,
+                photo = initialScreen == "liquid-photo",
+            )
             1 -> GlassGalleryScreen()
             else -> DeckLabScreen()
         }

@@ -1,6 +1,6 @@
-# App adapter contract — 0.1.3
+# App adapter contract — 0.1.4
 
-Status: **0.1.3 artifact available (Maven Local + GitHub Packages); App integration still blocked**. Do not add the
+Status: **0.1.4 artifact available (Maven Local + GitHub Packages); App integration still blocked**. Do not add the
 dependency or integrate into MaineCare until the merged test package is accepted, the stress
 ceiling is accepted, and the V2528A performance run is reviewed.
 
@@ -25,16 +25,16 @@ not add the effects modules to the app dependency graph yet.
 
 Dependency form for the merged test package:
 
-- **Current:** `com.mainecare.effects:motion:0.1.3`, `:glass:0.1.3`, `:deck:0.1.3`, in Maven
+- **Current:** `com.mainecare.effects:motion:0.1.4`, `:glass:0.1.4`, `:deck:0.1.4`, in Maven
   Local (`./gradlew publishToMavenLocal`) and GitHub Packages
-  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0, 0.1.1 and 0.1.3 remote
+  (`https://maven.pkg.github.com/BigStartByXuyb/mainecare-effects`; 0.1.0, 0.1.1, 0.1.3 and 0.1.4 remote
   verified by the publish workflow). A separate Android consumer build against Maven Local
   compiles `MaineGlassCard`, `GlassBackdrop`, `CardDeck` and passes.
 - **Fallback:** Gradle included build or vendored source modules.
 - **Fallback:** Gradle included build or vendored source modules.
 
 The license/notice classifier artifacts and `META-INF` copies in the sources jar travel with
-each AAR. See `docs/release-0.1.3.md`.
+each AAR. See `docs/release-0.1.4.md`.
 
 ## 2. Public surface the adapter may use
 
@@ -70,7 +70,7 @@ The adapter should keep a single mapping from MaineCare theme/state to a preset 
 `params.copy(...)` overrides. It must not use `RuntimeShader`, the raw maps, or
 `GlassBackdropState` internals.
 
-### Performance tiers (0.1.3, no quality switch)
+### Performance tiers (0.1.4, no quality switch)
 
 | Tier | Usage |
 | --- | --- |
@@ -80,9 +80,9 @@ The adapter should keep a single mapping from MaineCare theme/state to a preset 
 
 Do not refresh the backdrop per frame; the blur cache is per rounded radius. Emulator
 performance is diagnostic (deck 6.23–6.65% janky, P95 32–36ms; glass 4.58%, P95 29ms);
-V2528A is pending. See `docs/release-0.1.3.md` for the known ceiling and license carriage;
+V2528A is pending. See `docs/release-0.1.4.md` for the known ceiling and license carriage;
 the liquid-glass audit and its remaining edge differences are in
-`docs/liquid-glass-0.1.3.md`.
+`docs/liquid-glass-0.1.4.md`.
 
 ## 3. Proposed `enabled` / `quality` and reduced-motion/transparency
 

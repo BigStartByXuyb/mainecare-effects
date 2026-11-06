@@ -36,6 +36,8 @@ fun AbScreen(
     line: Boolean = false,
     color: Boolean = false,
     showcase: Boolean = false,
+    photo: Boolean = false,
+    overLightOverride: Boolean? = null,
     blurSigmaScale: Float = 1.4f,
 ) {
     val backdrop = rememberBackdropAsset(
@@ -43,30 +45,33 @@ fun AbScreen(
             line -> "ab-line.png"
             color -> "ab-color.png"
             flat -> "ab-flat.png"
+            photo -> "photo-beach.jpg"
             showcase -> "showcase.png"
             light -> "ab-light.png"
             else -> "ab-dark.png"
         },
     ) ?: return
     val radius = 30.dp
+    val useOverLight = overLightOverride ?: light
     val upstream = MaineGlassMaterials.Upstream.copy(
         blurRadiusDp = if (blurEnabled) MaineGlassMaterials.Upstream.blurRadiusDp else 0f,
         liquid = MaineGlassMaterials.Upstream.liquid.copy(
             cornerRadius = radius,
-            overLight = light,
+            overLight = useOverLight,
             displacementScale = if (forceDisplacement) displacementScale else 0f,
             aberrationIntensity = if (forceDisplacement) 2f else 0f,
         ),
-        shadowOffsetYDp = if (light) 16f else 12f,
-        shadowBlurSigmaDp = if (light) 56f else 32f,
-        shadowAlpha = if (light) 0.75f else 0.25f,
+        shadowOffsetYDp = if (useOverLight) 16f else 12f,
+        shadowBlurSigmaDp = if (useOverLight) 56f else 32f,
+        shadowAlpha = if (useOverLight) 0.75f else 0.25f,
     )
     val v21 = MaineGlassMaterials.Card.copy(
         liquid = MaineGlassMaterials.Card.liquid.copy(cornerRadius = radius),
     )
-    val labelColor = if (light) Color(0xFF15181C) else Color(0xFFF2F0EA)
+    val bright = light || showcase || photo
+    val labelColor = if (bright) Color(0xFF15181C) else Color(0xFFF2F0EA)
 
-    BoxWithConstraints(Modifier.fillMaxSize().background(if (light) Color(0xFFF2EDE3) else Color(0xFF05070C))) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(if (bright) Color(0xFFF2EDE3) else Color(0xFF05070C))) {
         GlassBackdrop(
             image = backdrop,
             modifier = Modifier.fillMaxSize(),

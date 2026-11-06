@@ -49,8 +49,8 @@ private val showcaseGlass = MaineGlassMaterials.Upstream.copy(
  * wallpaper. It is the default tab; the v21 Obsidian gallery moved to the second tab.
  */
 @Composable
-fun LiquidShowcaseScreen() {
-    val backdrop = rememberBackdropAsset("showcase.png") ?: return
+fun LiquidShowcaseScreen(overLight: Boolean = false, photo: Boolean = false) {
+    val backdrop = rememberBackdropAsset(if (photo) "photo-beach.jpg" else "showcase.png") ?: return
     GlassBackdrop(image = backdrop, modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -89,7 +89,7 @@ fun LiquidShowcaseScreen() {
                 material = showcaseGlass,
                 params = showcaseGlass.liquid.copy(
                     cornerRadius = 30.dp,
-                    overLight = true,
+                    overLight = overLight,
                     displacementScale = 70f,
                     aberrationIntensity = 2f,
                 ),
@@ -103,7 +103,7 @@ fun LiquidShowcaseScreen() {
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "UPSTREAM · OVERLIGHT",
+                            text = "UPSTREAM · SOURCE DEFAULTS",
                             fontSize = 9.sp,
                             letterSpacing = 1.6.sp,
                             color = LiquidInk.Faint,
@@ -126,7 +126,7 @@ fun LiquidShowcaseScreen() {
                         )
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            text = "位移 70 · 色散 2.0 · 模糊 14 px",
+                            text = "位移 70 · 色散 2.0 · 模糊 6 px",
                             fontSize = 11.sp,
                             letterSpacing = 0.4.sp,
                             color = LiquidInk.Muted,
@@ -149,7 +149,7 @@ fun LiquidShowcaseScreen() {
                     material = showcaseGlass,
                     params = showcaseGlass.liquid.copy(
                         cornerRadius = 26.dp,
-                        overLight = true,
+                        overLight = overLight,
                         displacementScale = 70f,
                     ),
                     interactive = true,
@@ -188,7 +188,7 @@ fun LiquidShowcaseScreen() {
                     material = showcaseGlass,
                     params = showcaseGlass.liquid.copy(
                         cornerRadius = 26.dp,
-                        overLight = true,
+                        overLight = overLight,
                         displacementScale = 70f,
                     ),
                     interactive = true,
@@ -227,9 +227,9 @@ fun LiquidShowcaseScreen() {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ShowcasePill("拖动玻璃 · 高光跟随")
+                ShowcasePill("拖动玻璃 · 高光跟随", overLight)
                 Spacer(Modifier.width(8.dp))
-                ShowcasePill("AGSL · API 33+")
+                ShowcasePill("AGSL · API 33+", overLight)
             }
             Spacer(Modifier.height(24.dp))
         }
@@ -251,14 +251,14 @@ private fun ShowcaseChip(label: String) {
 }
 
 @Composable
-private fun ShowcasePill(label: String) {
+private fun ShowcasePill(label: String, overLight: Boolean) {
     val material = MaineGlassMaterials.Upstream
     GlassSurface(
         modifier = Modifier.height(36.dp),
         material = material,
         params = material.liquid.copy(
             cornerRadius = 18.dp,
-            overLight = true,
+            overLight = overLight,
             displacementScale = 70f,
         ),
         interactive = false,

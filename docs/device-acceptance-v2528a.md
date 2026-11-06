@@ -6,8 +6,8 @@ pass. The MaineCare App is not modified; this uses the standalone demo APK.
 ## Artifact
 
 ```
-output/mainecare-effects-demo-0.1.3-debug.apk
-sha256 07085110d9f37440448b2f9eadac888c0058cfb6c22d55f0eb9ab28b88eb716a
+output/mainecare-effects-demo-0.1.4-debug.apk
+sha256 0699683e9a87d5e7665467485661a57d5ab4519093dc5111965c314fa980bdac
 ```
 
 The APK is generated from `:demo:assembleDebug` and is not committed (`output/` is ignored).
@@ -17,7 +17,7 @@ The device must run Android 13+ (API 33) for AGSL.
 
 ```bash
 adb devices -l
-adb -s <V2528A-serial> install -r output/mainecare-effects-demo-0.1.3-debug.apk
+adb -s <V2528A-serial> install -r output/mainecare-effects-demo-0.1.4-debug.apk
 ```
 
 If the device is not listed: enable Developer options → USB debugging, authorize the RSA
