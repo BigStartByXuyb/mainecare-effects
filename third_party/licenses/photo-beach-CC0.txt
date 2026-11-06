@@ -1,0 +1,7 @@
+Crystal Beach 2
+Author: Syced
+Source: https://commons.wikimedia.org/wiki/File:Crystal_Beach_2.jpg
+License: CC0 1.0 Universal (public domain dedication)
+License text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+
+The repository copy is resized and center-cropped to 1080x2400 for the portrait demo.

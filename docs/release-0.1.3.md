@@ -1,3 +1,7 @@
+> Superseded by 0.1.4. 0.1.3 used `overLight=true` on the bright showcase, which halved
+> displacement (70→35) and raised blur (6→14px), producing the milky look. 0.1.4 uses the
+> source-default `overLight=false`; see `docs/liquid-glass-0.1.4.md`.
+
 # MaineCare Effects 0.1.3 — liquid-glass first impression
 
 Release date: 2026-11-06. Source branch: `release-0.1.3`. The repository demo now opens on a

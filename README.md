@@ -1,7 +1,7 @@
 # MaineCare Effects
 
 A reusable Android Compose effects library for MaineCare: liquid glass, card deck, draggable
-card stack and coverflow. Version **0.1.3** is published to Maven Local and GitHub Packages;
+card stack and coverflow. Version **0.1.4** is published to Maven Local and GitHub Packages;
 the MaineCare App is **not** wired to it yet.
 
 ![Liquid glass showcase](docs/evidence/liquid-showcase-390.png)
@@ -23,11 +23,18 @@ tab.
 
 ## Liquid glass
 
-Default demo (`screen=liquid`): bright bokeh wallpaper and the `Upstream` preset. The clear
-glass shows edge refraction, RGB fringing and a specular rim; drag a surface to move the
-highlight. The overLight path uses the upstream 14px backdrop blur, the dark path 6px.
+Default demo (`screen=liquid`): bright bokeh wallpaper and the `Upstream` preset with the
+source-default `overLight=false` — full 70 displacement, 6px blur, clear glass. The crystal
+look comes from AGSL edge refraction, RGB fringing and the specular rim, not from a
+transparency overlay. `overLight=true` remains available for the upstream light treatment
+(70→35 displacement, 14px blur) but is **not** the default.
 
-![Liquid glass default](docs/evidence/liquid-showcase-default-390.png)
+![Liquid glass default](docs/evidence/liquid-showcase-390.png)
+
+Real-photo scene (`screen=liquid-photo`): the same clear glass over a CC0 beach photograph;
+the moving highlight and edge distortion are visible over clouds and foliage.
+
+![Liquid glass over a real photo](docs/evidence/liquid-showcase-photo-390.png)
 
 v21 Obsidian is the second tab (`screen=obsidian`), not the default. It keeps the dark tinted
 material, gold edge and inner shadow.
@@ -47,21 +54,21 @@ adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.dem
 ```
 
 The default screen is the liquid-glass showcase. `--es screen liquid` opens it with the system
-bars hidden; `screen` also accepts `obsidian`, `v21`, `glass`, `deck`, `gate`, `ab`,
-`ab-upstream` and `ab-v21`. The gate screen is fixed at 390×844dp and accepts
+bars hidden; `screen` also accepts `liquid-photo`, `obsidian`, `v21`, `glass`, `deck`, `gate`,
+`ab`, `ab-upstream` and `ab-v21`. Add `--es overlight 1` to evaluate the overLight treatment. The gate screen is fixed at 390×844dp and accepts
 `displacement=0|1`, `text=0|1`, `shadow=0`, `before=0`, `blur=0`, `bg=photo|obsidian`,
 `debug=1|2|3|4|6` (constant 0.5 / raw blur / map / graded warp / stage colour),
 `blurMode=cpu` + `blurScale=<factor>` (offscreen box-Gaussian probe) and `trace=0`
 (disable motion logs).
 
-## 0.1.3 artifact and adapter
+## 0.1.4 artifact and adapter
 
 Artifacts (Maven Local, AAR):
 
 ```
-com.mainecare.effects:motion:0.1.3
-com.mainecare.effects:glass:0.1.3
-com.mainecare.effects:deck:0.1.3
+com.mainecare.effects:motion:0.1.4
+com.mainecare.effects:glass:0.1.4
+com.mainecare.effects:deck:0.1.4
 ```
 
 Publish from this checkout:
@@ -80,8 +87,8 @@ dependencyResolutionManagement {
 
 ```kotlin
 dependencies {
-    implementation("com.mainecare.effects:glass:0.1.3")
-    implementation("com.mainecare.effects:deck:0.1.3")
+    implementation("com.mainecare.effects:glass:0.1.4")
+    implementation("com.mainecare.effects:deck:0.1.4")
     implementation(platform("androidx.compose:compose-bom:2026.03.00"))
     implementation("androidx.compose.material3:material3")
 }
@@ -148,7 +155,7 @@ Presets are `Card`, `Advice`, `MealFront`, `Insight`, `Dock`, `SoftControl`, plu
 clear glass). Its blur follows the source formula: 6px for the dark path and 14px for
 `overLight`. `LiquidGlassParams` defaults to those upstream values; the v21 presets keep
 their own values. Performance tiers, known ceiling and license carriage are documented in
-[`docs/release-0.1.3.md`](docs/release-0.1.3.md). Maven Local was verified
+[`docs/release-0.1.4.md`](docs/release-0.1.4.md). Maven Local was verified
 with a separate Android consumer build; GitHub Packages is published by
 `.github/workflows/publish.yml`. V2528A install/measure/return steps are in
 [`docs/device-acceptance-v2528a.md`](docs/device-acceptance-v2528a.md).
@@ -167,7 +174,7 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
   behind the pill plus the pill’s blurred-alpha composition; the offscreen CPU
   box-Gaussian attempt reached 0.99324 / 0.99167, confirming the kernel is not the limiter.
   The measured ceiling for the static-backdrop/per-surface-shadow path is **≈0.994**;
-  see the comparison report and [`docs/release-0.1.3.md`](docs/release-0.1.3.md).
+  see the comparison report and [`docs/release-0.1.4.md`](docs/release-0.1.4.md).
 - Motion: **PASS for the measured coverflow/stack runs** (spring deviation 0.47dp over 25
   frames, exact final state).
 - Performance on the shared API36 emulator: **FAIL** (deck 6.23–6.65% janky, P95 32–36ms;
@@ -177,9 +184,9 @@ are in [`docs/comparison-report.md`](docs/comparison-report.md). Current status:
 No document claims a pass that the numbers do not support.
 
 The App adapter contract is in [`docs/app-adapter-contract.md`](docs/app-adapter-contract.md).
-The 0.1.3 artifact exists, but no dependency or App integration exists yet; integration waits
+The 0.1.4 artifact exists, but no dependency or App integration exists yet; integration waits
 for the merged test package acceptance. The liquid-glass rendering audit is in
-[`docs/liquid-glass-0.1.3.md`](docs/liquid-glass-0.1.3.md).
+[`docs/liquid-glass-0.1.4.md`](docs/liquid-glass-0.1.4.md).
 
 ## Upstream A/B
 
@@ -191,10 +198,10 @@ adb shell am start -n com.mainecare.effects.demo.debug/com.mainecare.effects.dem
 ```
 
 `screen=ab` is upstream (left) / v21 (right); `ab-upstream` and `ab-v21` render one full card.
-`bg=dark|light|color|flat|line`, `dispScale`, and `blurScale` are diagnostics. The upstream
+`bg=dark|light|color|flat|line|showcase|photo`, `dispScale` and `blurScale` are diagnostics. The upstream
 preset is not a v21 parameter tweak: it uses the verified source defaults and clear rim.
 The measured comparison, remaining edge differences, and platform limits are in
-[`docs/liquid-glass-0.1.3.md`](docs/liquid-glass-0.1.3.md).
+[`docs/liquid-glass-0.1.4.md`](docs/liquid-glass-0.1.4.md).
 
 ## Verification harness
 
@@ -218,5 +225,6 @@ liquid-glass-react 1.1.1 (MIT); see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTIC
 `META-INF/`. The reviewed Apache-2.0 projects (Haze, Cloudy, AndroidLiquidGlass,
 NadeemIqbal/liquid-glass) contributed design review only; no code was copied.
 
-No test accounts, credentials, or personal data are stored in this repository. The demo
-backdrops are generated and synthetic.
+No test accounts, credentials, or personal data are stored in this repository. The showcase
+and landscape backdrops are generated; the beach photo is “Crystal Beach 2” by Syced
+(Wikimedia Commons, CC0 1.0), cropped for the portrait demo — see `THIRD_PARTY_NOTICES.md`.
