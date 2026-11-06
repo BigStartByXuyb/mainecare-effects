@@ -14,5 +14,5 @@ jobs:
           set -e
           for pkg in com.mainecare.effects.glass com.mainecare.effects.deck com.mainecare.effects.motion; do
             echo "PATCH $pkg"
-            gh api --method PATCH "/user/packages/maven/$pkg" -f visibility=public || echo "fail $pkg"
+            gh api --method PATCH "/users/BigStartByXuyb/packages/maven/$pkg" -f visibility=public || echo "fail $pkg"
           done
