@@ -1,0 +1,15 @@
+{
+  "left": "verification/upstream-demo/android-ab-upstream-dark-430.png",
+  "right": "verification/upstream-demo/upstream-dark-430.png",
+  "width": 1075,
+  "height": 2330,
+  "meanAbsoluteError": 4.0118403034234955,
+  "rmse": 14.253177684030936,
+  "psnr": 25.052569624538997,
+  "ssim": 0.9250093063720742,
+  "maxChannelDiff": 245,
+  "percentOver2": 23.298492863559236,
+  "percentOver5": 15.525182153907577,
+  "percentOver10": 12.39948098612636,
+  "percentOver20": 9.183710949196525
+}

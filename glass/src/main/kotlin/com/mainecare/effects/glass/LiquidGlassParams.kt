@@ -22,12 +22,12 @@ enum class GlassMode {
 /** Parameter names and defaults mirror liquid-glass-react's <LiquidGlass> props. */
 @Immutable
 data class LiquidGlassParams(
-    val displacementScale: Float = 22f,
-    val blurAmount: Float = 0.055f,
-    val saturation: Float = 150f,
-    val aberrationIntensity: Float = 2.2f,
-    val elasticity: Float = 0.18f,
-    val cornerRadius: Dp = 30.dp,
+    val displacementScale: Float = 70f,
+    val blurAmount: Float = 0.0625f,
+    val saturation: Float = 140f,
+    val aberrationIntensity: Float = 2f,
+    val elasticity: Float = 0.15f,
+    val cornerRadius: Dp = 999.dp,
     val mode: GlassMode = GlassMode.Standard,
     val overLight: Boolean = false,
 ) {
@@ -47,6 +47,9 @@ data class LiquidGlassParams(
             return if (mode == GlassMode.Shader) base else -base
         }
 }
+
+/** Edge treatment: MaineCare v21 tinted rim or liquid-glass-react's clear rim. */
+enum class GlassEdgeStyle { V21, Upstream }
 
 /**
  * The v21 Obsidian Veil material layer: tint, CSS backdrop filter, border, and inner
@@ -70,6 +73,7 @@ data class GlassMaterial(
     val shadowBlurSigmaDp: Float,
     val shadowAlpha: Float,
     val sheenStrength: Float,
+    val edgeStyle: GlassEdgeStyle = GlassEdgeStyle.V21,
     val beforeLayer: Boolean = false,
     val beforeStrength: Float = 1f,
     val afterGlow: Boolean = false,

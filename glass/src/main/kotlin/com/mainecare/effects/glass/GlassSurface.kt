@@ -27,6 +27,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -45,7 +46,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.floor
+import kotlin.math.sin
 
 @Composable
 fun GlassSurface(
@@ -64,7 +68,12 @@ fun GlassSurface(
     val debugNoOverlays = debugOutput > 0.5f
     var surfaceBounds by remember { mutableStateOf(Rect.Zero) }
     var surfaceSize by remember { mutableStateOf(Size.Zero) }
-    var pointer by remember { mutableStateOf(Offset(0.72f, 0.08f)) }
+    val neutralPointer = if (material.edgeStyle == GlassEdgeStyle.Upstream) {
+        Offset(0.5f, 0.5f)
+    } else {
+        Offset(0.72f, 0.08f)
+    }
+    var pointer by remember(material.edgeStyle) { mutableStateOf(neutralPointer) }
 
     val mapBitmap = remember(params.mode) {
         BitmapFactory.decodeResource(context.resources, mapResource(params.mode))
@@ -106,7 +115,7 @@ fun GlassSurface(
                     pointer = change.position.normalized(surfaceSize)
                     pressed = change.pressed
                 }
-                pointer = Offset(0.72f, 0.08f)
+                pointer = neutralPointer
             }
         }
     } else {
@@ -171,7 +180,11 @@ fun GlassSurface(
                 .drawWithContent {
                     drawContent()
                     if (!debugNoOverlays) {
-                        drawBorderAndHighlights(material, params.cornerRadius.toPx(), size)
+                        if (material.edgeStyle == GlassEdgeStyle.Upstream) {
+                            drawUpstreamEdge(material, params.cornerRadius.toPx(), size, pointer)
+                        } else {
+                            drawBorderAndHighlights(material, params.cornerRadius.toPx(), size)
+                        }
                     }
                 }
                 .then(interaction),
@@ -265,6 +278,10 @@ private fun bindShader(
     shader.setFloatUniform("uBeforeStrength", material.beforeStrength)
     shader.setFloatUniform("uDensity", density)
     shader.setFloatUniform("uBlurSigma", material.blurRadiusDp * density)
+    shader.setFloatUniform(
+        "uOpaqueWarp",
+        if (material.edgeStyle == GlassEdgeStyle.Upstream) 1f else 0f,
+    )
     shader.setFloatUniform("uUnderlayAlpha", material.backgroundUnderlayAlpha)
     setColorUniform(shader, "uBorderColor", material.borderColor)
     shader.setFloatUniform("uBorderWidth", floor(density).coerceAtLeast(1f))
@@ -331,6 +348,75 @@ private fun gaussianCdf(z: Float): Float {
         0.284496736) * t + 0.254829592) * t
     val erf = (1.0 - poly * kotlin.math.exp(-x * x)) * if (x < 0) -1.0 else 1.0
     return (0.5 * (1.0 + erf)).toFloat()
+}
+
+private fun DrawScope.drawUpstreamEdge(
+    material: GlassMaterial,
+    cornerRadiusPx: Float,
+    size: Size,
+    pointer: Offset,
+) {
+    if (size.width <= 1f || size.height <= 1f) return
+    val border = 1.5.dp.toPx()
+    val offsetX = (pointer.x - 0.5f) * 100f
+    val offsetY = (pointer.y - 0.5f) * 100f
+    val angle = (135f + offsetX * 1.2f) * kotlin.math.PI.toFloat() / 180f
+    val p1 = ((33f + offsetY * 0.3f) / 100f).coerceIn(0.1f, 0.9f)
+    val p2 = ((66f + offsetY * 0.4f) / 100f).coerceIn(0.1f, 0.9f)
+    val a1 = (0.12f + abs(offsetX) * 0.008f).coerceAtMost(0.9f)
+    val a2 = (0.40f + abs(offsetX) * 0.012f).coerceAtMost(0.9f)
+    val b1 = (0.32f + abs(offsetX) * 0.008f).coerceAtMost(0.95f)
+    val b2 = (0.60f + abs(offsetX) * 0.012f).coerceAtMost(0.98f)
+    val dir = Offset(sin(angle), -cos(angle))
+    val length = abs(size.width * dir.x) + abs(size.height * dir.y)
+    val center = Offset(size.width / 2f, size.height / 2f)
+    val start = center - dir * (length / 2f)
+    val end = center + dir * (length / 2f)
+    fun brush(first: Float, second: Float): Brush = Brush.linearGradient(
+        0f to Color.Transparent,
+        p1 to Color.White.copy(alpha = first),
+        p2 to Color.White.copy(alpha = second),
+        1f to Color.Transparent,
+        start = start,
+        end = end,
+    )
+    val inset = border / 2f
+    val innerRadius = (cornerRadiusPx - inset).coerceAtLeast(0f)
+    drawRoundRect(
+        brush = brush(a1, a2),
+        topLeft = Offset(inset, inset),
+        size = Size(size.width - border, size.height - border),
+        cornerRadius = CornerRadius(innerRadius),
+        style = Stroke(width = border),
+        alpha = 0.2f,
+        blendMode = BlendMode.Screen,
+    )
+    drawRoundRect(
+        brush = brush(b1, b2),
+        topLeft = Offset(inset, inset),
+        size = Size(size.width - border, size.height - border),
+        cornerRadius = CornerRadius(innerRadius),
+        style = Stroke(width = border),
+        blendMode = BlendMode.Overlay,
+    )
+    val thin = 0.5.dp.toPx()
+    drawRoundRect(
+        color = Color.White.copy(alpha = 0.5f),
+        topLeft = Offset(thin / 2f, thin / 2f),
+        size = Size(size.width - thin, size.height - thin),
+        cornerRadius = CornerRadius((cornerRadiusPx - thin / 2f).coerceAtLeast(0f)),
+        style = Stroke(width = thin),
+        blendMode = BlendMode.Screen,
+    )
+    val highlight = 1.dp.toPx()
+    val margin = (cornerRadiusPx * 0.7f).coerceAtMost(size.width / 2f - 1f)
+    drawLine(
+        color = Color.White.copy(alpha = 0.25f),
+        start = Offset(margin, highlight * 1.5f),
+        end = Offset(size.width - margin, highlight * 1.5f),
+        strokeWidth = highlight,
+        blendMode = BlendMode.Screen,
+    )
 }
 
 private fun DrawScope.drawBorderAndHighlights(

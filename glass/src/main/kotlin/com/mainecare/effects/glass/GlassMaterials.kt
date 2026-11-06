@@ -28,7 +28,7 @@ object MaineGlassMaterials {
         sheenStrength = 1f,
         beforeLayer = true,
         beforeStrength = 0.75f,
-        liquid = LiquidGlassParams(displacementScale = 22f, aberrationIntensity = 2.2f, elasticity = 0.18f),
+        liquid = LiquidGlassParams(displacementScale = 22f, aberrationIntensity = 2.2f, elasticity = 0.18f, cornerRadius = 30.dp),
     )
 
     val Advice = GlassMaterial(
@@ -46,7 +46,7 @@ object MaineGlassMaterials {
         shadowAlpha = 0.58f,
         sheenStrength = 1.1f,
         afterGlow = true,
-        liquid = LiquidGlassParams(displacementScale = 22f, aberrationIntensity = 2.2f, elasticity = 0.18f),
+        liquid = LiquidGlassParams(displacementScale = 22f, aberrationIntensity = 2.2f, elasticity = 0.18f, cornerRadius = 30.dp),
         goldTopEdge = true,
         sheenTopRight = Color(0x29F4F8FB),
         sheenTopCenter = Offset(1.0f, 0.0f),
@@ -148,6 +148,32 @@ object MaineGlassMaterials {
         sheenVerticalMid = Color(0x03FFFFFF),
         sheenVerticalMidPos = 0.28f,
         sheenVerticalBottom = Color(0x0E000000),
+    )
+
+
+    /**
+     * liquid-glass-react 1.1.1 source defaults, not the v21 presets:
+     * displacementScale=70, blurAmount=.0625 (6px backdrop blur), saturation=140,
+     * aberrationIntensity=2, elasticity=.15, cornerRadius=999, standard, overLight=false.
+     * The clear rim is drawn by [GlassEdgeStyle.Upstream]; there is no tint or inner shadow.
+     */
+    val Upstream = GlassMaterial(
+        name = "upstream",
+        tint = Color.Transparent,
+        blurRadiusDp = 6f,
+        saturation = 1.40f,
+        brightness = 1f,
+        borderColor = Color.Transparent,
+        topHighlightColor = Color.Transparent,
+        bottomInnerShadowColor = Color.Transparent,
+        innerShadowDepthDp = 0f,
+        innerShadowOffsetYDp = 0f,
+        shadowOffsetYDp = 12f,
+        shadowBlurSigmaDp = 32f,
+        shadowAlpha = 0.25f,
+        sheenStrength = 0f,
+        edgeStyle = GlassEdgeStyle.Upstream,
+        liquid = LiquidGlassParams(),
     )
 
     val SoftControl = GlassMaterial(

@@ -27,6 +27,23 @@ class LiquidGlassParamsTest {
     }
 
     @Test
+    fun upstreamPresetMatchesSourceDefaults() {
+        val upstream = MaineGlassMaterials.Upstream
+        assertEquals(70f, upstream.liquid.displacementScale, 0f)
+        assertEquals(0.0625f, upstream.liquid.blurAmount, 0.0001f)
+        assertEquals(140f, upstream.liquid.saturation, 0.0001f)
+        assertEquals(2f, upstream.liquid.aberrationIntensity, 0f)
+        assertEquals(0.15f, upstream.liquid.elasticity, 0f)
+        assertEquals(999.dp, upstream.liquid.cornerRadius)
+        assertEquals(6f, upstream.blurRadiusDp, 0f)
+        assertEquals(1.40f, upstream.saturation, 0.0001f)
+        assertEquals(1f, upstream.brightness, 0f)
+        assertEquals(0f, upstream.tint.alpha, 0f)
+        assertEquals(GlassEdgeStyle.Upstream, upstream.edgeStyle)
+        assertEquals(999.dp, LiquidGlassParams().cornerRadius)
+    }
+
+    @Test
     fun v21CardPresetMatchesCss() {
         val card = MaineGlassMaterials.Card
         assertEquals(34f, card.blurRadiusDp, 0f)

@@ -2,6 +2,9 @@ package com.mainecare.effects.demo
 
 import android.os.Bundle
 import android.util.Log
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -42,6 +45,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val initialScreen = intent.getStringExtra("screen")
+        if (initialScreen?.startsWith("ab") == true) {
+            WindowCompat.getInsetsController(window, window.decorView).apply {
+                hide(WindowInsetsCompat.Type.systemBars())
+                systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        }
+        val abBg = intent.getStringExtra("bg")
+        val abLight = abBg == "light"
+        val abFlat = abBg == "flat"
+        val abLine = abBg == "line"
+        val abColor = abBg == "color"
+        val gateDispScale = intent.getStringExtra("dispScale")?.toFloatOrNull() ?: 70f
         val displacement = intent.getStringExtra("displacement") != "0"
         val gateText = intent.getStringExtra("text") == "1"
         val gateDebug = intent.getStringExtra("debug")?.toFloatOrNull() ?: 0f
@@ -81,6 +97,12 @@ class MainActivity : ComponentActivity() {
                     gateScene = gateScene,
                     gateBlurMode = gateBlurMode,
                     gateBeforeStrength = gateBeforeStrength,
+                    abLight = abLight,
+                    abFlat = abFlat,
+                    abLine = abLine,
+                    abColor = abColor,
+                    gateDispScale = gateDispScale,
+                    abBlurSigmaScale = gateBlurSigmaScale,
                     gateBackground = gateBackground,
                     gateBlurSigmaScale = gateBlurSigmaScale,
                 )
@@ -106,7 +128,28 @@ private fun DemoRoot(
     gateBeforeStrength: Float?,
     gateBackground: String,
     gateBlurSigmaScale: Float,
+    abLight: Boolean,
+    abFlat: Boolean,
+    abLine: Boolean,
+    abColor: Boolean,
+    gateDispScale: Float,
+    abBlurSigmaScale: Float,
 ) {
+    if (initialScreen?.startsWith("ab") == true) {
+        AbScreen(
+            light = abLight,
+            mode = initialScreen.removePrefix("ab-").ifEmpty { "ab" },
+            debugOutput = gateDebug,
+            forceDisplacement = gateDisplacement,
+            blurEnabled = gateBlur,
+            displacementScale = gateDispScale,
+            flat = abFlat,
+            line = abLine,
+            color = abColor,
+            blurSigmaScale = abBlurSigmaScale,
+        )
+        return
+    }
     if (initialScreen == "gate") {
         GateScreen(
             forceDisplacement = gateDisplacement,
